@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シフト表生成アプリ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="mb-4">シフト表生成アプリ (Web版)</h1>
+        <form action="/generate" method="POST" class="card p-4 shadow-sm">
+            
+            <div class="mb-3">
+                <label class="form-label">シフト開始日 (YYYY-MM-DD)</label>
+                <input type="date" name="start_date" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">日数</label>
+                <input type="number" name="num_days" class="form-control" value="30" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">祝日 (YYYY-MM-DD, カンマ区切り)</label>
+                <input type="text" name="holidays" class="form-control" placeholder="例: 2026-01-01, 2026-01-12">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">希望休 (社員,日付(日のみ); セミコロン区切り)</label>
+                <input type="text" name="hope_holidays" class="form-control" placeholder="例: A,5; B,12; A,15">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">社員リスト (社員名,スキル...; セミコロン区切り)</label>
+                <textarea name="employees" class="form-control" rows="4">{{ default_caps }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">社員別休日数 (社員名,休日数; セミコロン区切り)</label>
+                <textarea name="holiday_requirements" class="form-control" rows="3">{{ default_reqs }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">シフト表を生成してダウンロード</button>
+        </form>
+    </div>
+</body>
+</html>
