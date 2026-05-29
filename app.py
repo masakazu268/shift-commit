@@ -41,23 +41,23 @@ def generate_shift_table(employee_capabilities, start_date, num_days, holidays, 
 
             if date_str in holidays:
                 required_workers = 5
-                possible_tasks = ['M01h', 'M02', 'M03', 'M04', 'M05']
+                possible_tasks = ['M01','M02', 'M03', 'M04', 'M05']
             elif date.weekday() == 5:
                 required_workers = 6
-                possible_tasks = ['MS', 'M01h' , 'M02', 'M03', 'M04', 'M05']
+                possible_tasks = ['M01', 'HM' , 'M02', 'M03', 'M04', 'M05']
             elif date.weekday() == 6:
-                required_workers = 5
-                possible_tasks = ['M01h', 'M02', 'M03', 'M04', 'M05']
+                required_workers = 6
+                possible_tasks = ['M01','HM' ,'M02', 'M03', 'M04', 'M05']
             elif date.weekday() == 0:
                 required_workers = 11
-                possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'OW', 'M01', 'M02', 'M03', 'M05']
+                possible_tasks = ['771', '772', '773', '774', '775', '776', '777','M01', 'M02', 'M03', 'M05']
             else:
                 required_workers = 11
-                possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'OW', 'MS', 'M02', 'M04', 'M05' ]
+                possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M04', 'M05' ]
 
-            if i >= 3 and all((date_list[i-j].strftime('%Y-%m-%d') in holidays or date_list[i-j].weekday() >= 5) for j in range(1, 4)):
-                required_workers = 15
-                possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'OW', 'MS', 'M02', 'M03', 'M05', 'F']
+            # if i >= 3 and all((date_list[i-j].strftime('%Y-%m-%d') in holidays or date_list[i-j].weekday() >= 5) for j in range(1, 4)):
+            #     required_workers = 12
+            #     possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M03', 'M05', 'F']
             
             day_tasks = set()
             employees = list(employee_capabilities.keys())
@@ -103,7 +103,7 @@ def generate_shift_table(employee_capabilities, start_date, num_days, holidays, 
 # --- [ルーティング設定] Webアプリ用の処理 ---
 
 # デフォルトの社員データ（初期表示用）
-DEFAULT_CAPABILITIES = "A,771,775; B,773,774,775,M01,M05; C,773,774,776,777,M01h,M01,M02,M03; D,774,776,777,M03; E,773,774,776,777,M02,M03; F,771,773,775,M01h,M01,M04,M05; G,774; H,771,773,774,775,M01h,M01,M04,M05; I,771,773,774,775,776,777,M01h,M01,M02,M03,M04,M05; J,771,773,M01h,M01,M04,M05; K,OW; L,771,774,776,777,M03; M,M02; N,M02"
+DEFAULT_CAPABILITIES = "A,771,773,774,775,M01,HM,M05; B,773,774,776,777,M01,HM,M02,M05; C,773,774,776,777; D,773,774,776,777,M02,M05; E,773,774,775,HM; F,776,777,M02,M04; G,771,772,775,M04; H,771,772,773,774,775,M01,HM,M04,M05; I,771,772,773,774,M01h,M01,HM,M04,M05; J,771,772,773,775,HM; K,771,774,776,777,M01,HM; L,M02; M,771,772,774,HM,M04; N,771,772"
 DEFAULT_REQUIREMENTS = "A,8; B,8; C,8; D,8; E,8; F,8; G,8; H,8; I,8; J,8; K,8; L,8; M,8; N,8"
 
 @app.route('/', methods=['GET'])
