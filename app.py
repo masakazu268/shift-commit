@@ -17,7 +17,7 @@ def check_employee_holidays(employee_holidays, required_holidays):
             return False
     return True
 
-def generate_shift_table(employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, max_iterations=30000):
+def generate_shift_table(employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, max_iterations=1000):
     shift_table = {employee: [] for employee in employee_capabilities}
     employee_holidays = {employee: 0 for employee in employee_capabilities}
     consecutive_work_days = {employee: 0 for employee in employee_capabilities}
@@ -31,10 +31,13 @@ def generate_shift_table(employee_capabilities, start_date, num_days, holidays, 
         hope_holidays_dict[employee].append((start_date + timedelta(days=day - 1)).strftime('%Y-%m-%d'))
 
     iterations = 0
+    # Renderのタイムアウトを避けるため、最外周の最大試行回数を1000回に制限
     while iterations < max_iterations:
         shift_table = {employee: [] for employee in employee_capabilities}
         employee_holidays = {employee: 0 for employee in employee_capabilities}
         consecutive_work_days = {employee: 0 for employee in employee_capabilities}
+        
+        all_days_success = True  # 全日程が正常に組めたかどうかのフラグ
 
         for i, date in enumerate(date_list):
             date_str = date.strftime('%Y-%m-%d')
@@ -55,55 +58,73 @@ def generate_shift_table(employee_capabilities, start_date, num_days, holidays, 
                 required_workers = 11
                 possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M04', 'M05' ]
 
-            # if i >= 3 and all((date_list[i-j].strftime('%Y-%m-%d') in holidays or date_list[i-j].weekday() >= 5) for j in range(1, 4)):
-            #     required_workers = 12
-            #     possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M03', 'M05', 'F']
-            
-            day_tasks = set()
-            employees = list(employee_capabilities.keys())
-            random.shuffle(employees)
+            # --- その日のシフトを埋めるためのローカル試行（最大50回） ---
+            day_success = False
+            for _ in range(50):
+                day_tasks = set()
+                # 試行ごとに一時的な状態をリセットしてやり直す
+                temp_shifts = {}
+                temp_holidays = employee_holidays.copy()
+                temp_consecutive = consecutive_work_days.copy()
 
-            for employee in employees:
-                if i > 0 and shift_table[employee][i-1] == 'M05':
-                    shift_table[employee].append('') 
-                    employee_holidays[employee] += 1
-                    consecutive_work_days[employee] = 0
-                    continue
+                employees = list(employee_capabilities.keys())
+                random.shuffle(employees)
 
-                if employee in hope_holidays_dict and date_str in hope_holidays_dict[employee]:
-                    shift_table[employee].append('RH')
-                    employee_holidays[employee] += 1
-                    consecutive_work_days[employee] = 0
-                elif len(day_tasks) < required_workers and consecutive_work_days[employee] < 5:
-                    possible_employee_tasks = [task for task in employee_capabilities[employee] if task in possible_tasks and task not in day_tasks]
-                    if possible_employee_tasks:
-                        task = random.choice(possible_employee_tasks)
-                        shift_table[employee].append(task)
-                        day_tasks.add(task)
-                        consecutive_work_days[employee] += 1
+                for employee in employees:
+                    # 前日M05の休み処理
+                    if i > 0 and shift_table[employee][i-1] == 'M05':
+                        temp_shifts[employee] = ''
+                        temp_holidays[employee] += 1
+                        temp_consecutive[employee] = 0
+                        continue
+
+                    # 希望休の処理
+                    if employee in hope_holidays_dict and date_str in hope_holidays_dict[employee]:
+                        temp_shifts[employee] = 'RH'
+                        temp_holidays[employee] += 1
+                        temp_consecutive[employee] = 0
+                    # 必要人数に達していない ＆ 5連勤未満なら出勤を検討
+                    elif len(day_tasks) < required_workers and temp_consecutive[employee] < 5:
+                        possible_employee_tasks = [task for task in employee_capabilities[employee] if task in possible_tasks and task not in day_tasks]
+                        if possible_employee_tasks:
+                            task = random.choice(possible_employee_tasks)
+                            temp_shifts[employee] = task
+                            day_tasks.add(task)
+                            temp_consecutive[employee] += 1
+                        else:
+                            temp_shifts[employee] = ''
+                            temp_consecutive[employee] = 0
                     else:
-                        shift_table[employee].append('')
-                        consecutive_work_days[employee] = 0
-                else:
-                    shift_table[employee].append('')
-                    employee_holidays[employee] += 1
-                    consecutive_work_days[employee] = 0
+                        temp_shifts[employee] = ''
+                        temp_holidays[employee] += 1
+                        temp_consecutive[employee] = 0
 
-            if len(day_tasks) < required_workers:
-                for employee in shift_table.keys():
-                    if date_str in hope_holidays_dict.get(employee, []):
-                        shift_table[employee][-1] = 'NG'
+                # 必要人数を無事満たせたら、この日の決定事項とする
+                if len(day_tasks) == required_workers:
+                    day_success = True
+                    # 本番データに反映
+                    for emp in employee_capabilities:
+                        shift_table[emp].append(temp_shifts[emp])
+                    employee_holidays = temp_holidays
+                    consecutive_work_days = temp_consecutive
+                    break
+            
+            # 50回シャッフルしてもその日の人数が埋まらなかった場合
+            if not day_success:
+                all_days_success = False
+                break # この周（全日程のやり直し）を諦めて次の iteration へ
 
-        if check_employee_holidays(employee_holidays, required_holidays):
+        # すべての日程が正常に埋まり、かつ全員の公休数が基準を満たしていれば終了
+        if all_days_success and check_employee_holidays(employee_holidays, required_holidays):
             break
+            
         iterations += 1
 
     return shift_table
-
 # --- [ルーティング設定] Webアプリ用の処理 ---
 
 # デフォルトの社員データ（初期表示用）
-DEFAULT_CAPABILITIES = "A,771,773,774,775,M01,HM,M05; B,773,774,776,777,M01,HM,M02,M03,M05; C,773,774,776,777,M03; D,773,774,776,777,M02,M03,M05; E,773,774,775,HM; F,776,777,M02,M03; G,771,772,775,M04; H,771,772,773,774,775,M01,HM,M04,M05; I,771,772,773,774,M01h,M01,HM,M04,M05; J,771,772,773,775,HM; K,771,774,776,777,M01,M03,HM; L,M02; M,771,772,774,HM,M04; N,771,772"
+DEFAULT_CAPABILITIES = "A,773,774,775,M01,HM,M05; B,773,774,776,777,M01,HM,M02,M03,M05; C,773,774,776,777,M03; D,773,774,776,777,M02,M03,M05; E,773,774,775,HM; F,776,777,M02,M03; G,771,772,775,M04; H,771,772,773,774,775,M01,HM,M04,M05; I,771,772,773,774,M01h,M01,HM,M04,M05; J,772,773,775,HM; K,771,774,776,777,M01,M03,HM; L,M02; M,771,772,774,HM,M04; N,771,772"
 DEFAULT_REQUIREMENTS = "A,8; B,8; C,8; D,8; E,8; F,8; G,8; H,8; I,8; J,8; K,8; L,8; M,8; N,8"
 
 @app.route('/', methods=['GET'])
