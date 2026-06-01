@@ -44,4 +44,24 @@
         </form>
     </div>
 </body>
+<body>
+    <h1>シフト提出システム</h1>
+    <p>今月のシフトを入力して提出してください。</p>
+    
+    <hr>
+
+    <div style="margin-bottom: 20px;">
+        <h3>1. 準備</h3>
+        <p>まだテンプレートをお持ちでない方は、こちらからダウンロードして入力してください。</p>
+        <a href="{{ url_for('static', filename='excel/shift_template.xlsx') }}" download>
+            Excelテンプレートをダウンロード
+        </a>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>2. 提出</h3>
+        </div>
+</body>
 </html>
