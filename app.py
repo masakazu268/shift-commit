@@ -4,8 +4,11 @@ import io
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, send_file
 import pandas as pd
+import mimetypes
 
 app = Flask(__name__)
+
+mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
 # --- [ロジック部分] 既存のコードをそのまま活用 ---
 def is_weekend_or_holiday(date, holidays):
