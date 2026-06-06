@@ -23,7 +23,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
+with app.app_context():
+    db.create_all()
 
 mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
