@@ -26,6 +26,21 @@ db = SQLAlchemy(app)
 with app.app_context():
     db.create_all()
 
+# db = SQLAlchemy(app) の下あたりに追加
+
+class ShiftResult(db.Model):
+    __tablename__ = 'shift_results'
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    start_date = db.Column(db.String(10), nullable=False)     # "2026-06-01" など
+    employee_name = db.Column(db.String(50), nullable=False)  # "A" などの社員名
+    date_str = db.Column(db.String(10), nullable=False)       # "2026-06-01" などの日付
+    task = db.Column(db.String(10))                           # "M01" などのシフト記号
+
+
+
+
+
 mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
 # --- [ロジック部分] 既存のコードをそのまま活用 ---
