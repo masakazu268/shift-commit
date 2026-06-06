@@ -37,10 +37,6 @@ class ShiftResult(db.Model):
     date_str = db.Column(db.String(10), nullable=False)       # "2026-06-01" などの日付
     task = db.Column(db.String(10))                           # "M01" などのシフト記号
 
-
-
-
-
 mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
 # --- [ロジック部分] 既存のコードをそのまま活用 ---
