@@ -54,19 +54,26 @@
 
             <button type="submit" class="btn btn-primary w-100 py-2">シフト表を生成してダウンロード</button>
         </form>
-    </div>
 <tbody>
             {% for row in saved_slots %}
             <tr>
                 <td style="padding: 8px; font-weight: bold; background-color: #fafafa;">{{ row.employee }}</td>
                 {% for task in row.tasks %}
-                <td style="padding: 8px;"{% if task == 'M05' %}background-color: #ffcccc;{% elif task == 'RH' or task == 'NG' %}background-color: #e0e0e0;{% endif %}">
+                <td style="padding: 8px; "{% if task == 'M05' %}background-color: #ffcccc;{% elif task == 'RH' or task == 'NG' %}background-color: #e0e0e0;{% endif %}">
                     {{ task }}
                 </td>
                 {% endfor %}
             </tr>
             {% endfor %}
         </tbody>
+
+
+
+
+
+
+        
+    </div>
 
     
 </body>
