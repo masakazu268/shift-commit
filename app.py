@@ -454,15 +454,61 @@ DEFAULT_REQUIREMENTS = "A,8; B,8; C,8; D,8; E,8; F,8; G,8; H,8; I,8; J,8; K,8; L
 
 @app.route('/', methods=['GET'])
 def index():
-    # データベースが有効なら、過去の最新のシフト開始日を読み込んでみる（おまけ拡張用）
-    saved_shifts = []
+    saved_slots = []
+    dates_list = []
+    
+    # 💾 Neonデータベースから最新の保存データを読み込む
     if db:
         try:
-            # データベースから最新のレコードを10件取得してみるなど、将来的な表示ロジックをここに組めます
-            pass
-        except:
-            pass
-    return render_template('index.html', default_caps=DEFAULT_CAPABILITIES, default_reqs=DEFAULT_REQUIREMENTS)
+            # 1. まず、一番最近保存された「開始日（start_date）」を1つ特定する
+            latest_record = ShiftResult.query.order_by(ShiftResult.id.desc()).first()
+            if latest_record:
+                latest_start = latest_record.start_date
+                
+                # 2. その開始日に紐づくシフト全件を、日付順・社員名順に取得
+                records = ShiftResult.query.filter_by(start_date=latest_start).order_by(ShiftResult.date_str, ShiftResult.employee_name).all()
+                
+                # 3. 画面で表示しやすいようにデータを整形
+                # 重複のない日付リストと社員ごとのシフト辞書を作る
+                dates_set = sorted(list(set([r.date_str for r in records])))
+                dates_list = dates_set
+                
+                # 構造: { 'A': ['M01', 'M02', ...], 'B': [...] }
+                shift_dict = {}
+                for r in records:
+                    if r.employee_name not in shift_dict:
+                        shift_dict[r.employee_name] = {}
+                    shift_dict[r.employee_name][r.date_str] = r.task
+                
+                # 表（行データ）の形式に変換
+                for emp, tasks in shift_dict.items():
+                    row = {'employee': emp, 'tasks': [tasks.get(d, '') for d in dates_list]}
+                    saved_slots.append(row)
+        except Exception as e:
+            print(f"⚠️ 画面表示用のデータ読み込みエラー: {e}")
+
+    # 読み込んだ「saved_slots（シフト）」と「dates_list（日付）」をHTMLに引き渡す
+    return render_template(
+        'index.html', 
+        default_caps=DEFAULT_CAPABILITIES, 
+        default_reqs=DEFAULT_REQUIREMENTS,
+        saved_slots=saved_slots,
+        dates_list=dates_list
+    )
+
+
+
+# @app.route('/', methods=['GET'])
+# def index():
+#     # データベースが有効なら、過去の最新のシフト開始日を読み込んでみる（おまけ拡張用）
+#     saved_shifts = []
+#     if db:
+#         try:
+#             # データベースから最新のレコードを10件取得してみるなど、将来的な表示ロジックをここに組めます
+#             pass
+#         except:
+#             pass
+#     return render_template('index.html', default_caps=DEFAULT_CAPABILITIES, default_reqs=DEFAULT_REQUIREMENTS)
 
 @app.route('/generate', methods=['POST'])
 def generate():
