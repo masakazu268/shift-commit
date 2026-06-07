@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, send_file , url_for # pyright
 import pandas as pd
 import mimetypes
 import os
-
+import openpyxl # pyright: ignore[reportMissingModuleSource]
 
 
 app = Flask(__name__)
