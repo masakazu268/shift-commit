@@ -6,36 +6,10 @@ from flask import Flask, render_template, request, send_file , url_for # pyright
 import pandas as pd
 import mimetypes
 import os
-from flask_sqlalchemy import SQLAlchemy # pyright: ignore[reportMissingImports]
+
 
 
 app = Flask(__name__)
-
-# 1. 環境変数から DATABASE_URL を取得
-database_url = os.getenv("DATABASE_URL")
-
-# 2. RenderやNeonの仕様に合わせて postgres:// を postgresql:// に補正
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-# SQLAlchemyの設定
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-with app.app_context():
-    db.create_all()
-
-# db = SQLAlchemy(app) の下あたりに追加
-
-class ShiftResult(db.Model):
-    __tablename__ = 'shift_results'
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    start_date = db.Column(db.String(10), nullable=False)     # "2026-06-01" など
-    employee_name = db.Column(db.String(50), nullable=False)  # "A" などの社員名
-    date_str = db.Column(db.String(10), nullable=False)       # "2026-06-01" などの日付
-    task = db.Column(db.String(10))                           # "M01" などのシフト記号
 
 mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
