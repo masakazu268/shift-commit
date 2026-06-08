@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy # pyright: ignore[reportMissingImports]
 
 app = Flask(__name__)
 
-mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
+mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsx')
 
 # ==========================================
 # 🗄️ データベース（Neon / SQLAlchemy）設定
