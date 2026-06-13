@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -75,6 +75,160 @@
             </tr>
             {% endfor %}
         </tbody>
+    </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シフト表生成アプリ & 社員マスタ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="mb-4 text-center">📅 シフト管理 & 社員スキルシステム</h1>
+        
+        <div class="card p-4 shadow-sm mb-5 bg-white">
+            <h3 class="card-title text-primary border-bottom pb-2">👤 社員マスタ管理 (データベース永続化)</h3>
+            <p class="text-muted small">ここに登録されたデータが自動的にシフト生成のベースになります。追加・変更・削除は即座にデータベースへ保存されます。</p>
+
+            <form action="{{ url_for('add_employee') }}" method="POST" class="row g-3 bg-light p-3 rounded mb-4">
+                <h5>➕ 新規社員の追加</h5>
+                <div class="col-md-3">
+                    <input type="text" name="name" class="form-control" placeholder="社員名 (例: O)" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" name="skills" class="form-control" placeholder="スキル（カンマ区切り。例: 771,772,M01）" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="required_holidays" class="form-control" value="8" min="0" placeholder="公休日数">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">追加</button>
+                </div>
+            </form>
+
+            <h5>📋 登録社員一覧</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th style="width: 15%;">社員名</th>
+                            <th style="width: 55%;">所有スキル</th>
+                            <th style="width: 15%;">必要公休日数</th>
+                            <th style="width: 15%;">アクション</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees_list %}
+                        <tr>
+                            <td>
+                                <form id="update-form-{{ emp.id }}" action="{{ url_for('update_employee', id=emp.id) }}" method="POST" class="d-inline">
+                                    <input type="text" name="name" class="form-control form-control-sm" value="{{ emp.name }}" required>
+                            </td>
+                            <td>
+                                    <input type="text" name="skills" class="form-control form-control-sm" value="{{ emp.skills }}" required>
+                            </td>
+                            <td>
+                                    <input type="number" name="required_holidays" class="form-control form-control-sm" value="{{ emp.required_holidays }}" min="0">
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success btn-sm">🔄 保存</button>
+                                </form> <form action="{{ url_for('delete_employee', id=emp.id) }}" method="POST" onsubmit="return confirm('本当にこの社員を削除しますか？');" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ 削除</button>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">データがありません。上のフォームから追加してください。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="card p-4 shadow-sm mb-5 bg-white">
+            <h3 class="card-title text-success border-bottom pb-2">⚙️ シフト条件入力と生成</h3>
+            
+            <div class="mb-4 bg-light p-3 rounded">
+                <h5 class="small font-weight-bold">💡 ヒント</h5>
+                <p class="card-text text-muted small mb-0">下の「社員リスト」「社員別休日数」には、上のマスタデータの内容が<b>自動で反映・セットされています</b>。必要に応じて一時的に書き換えることも可能です。</p>
+            </div>
+
+            <form action="/generate" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-weight-bold">シフト開始日 (YYYY-MM-DD)</label>
+                        <input type="date" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">期間（日数）</label>
+                        <input type="number" name="num_days" class="form-control" value="30" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">祝日指定 (YYYY-MM-DD, カンマ区切り)</label>
+                    <input type="text" name="holidays" class="form-control" placeholder="例: 2026-01-01, 2026-01-12">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">希望休 (社員名,日付; セミコロン区切り)</label>
+                    <input type="text" name="hope_holidays" class="form-control" placeholder="例: A,5; B,12; A,15">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">シフト生成用：社員スキルデータ（自動連動中）</label>
+                    <textarea name="employees" class="form-control text-monospace small" rows="3">{{ default_caps }}</textarea>
+                </div>
+             
+                <div class="mb-3">
+                    <label class="form-label">シフト生成用：休日数データ（自動連動中）</label>
+                    <textarea name="holiday_requirements" class="form-control text-monospace small" rows="2">{{ default_reqs }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-3 font-weight-bold fs-5">🚀 シフト表を自動生成してExcelをDL</button>
+            </form>
+        </div>
+
+        {% if saved_slots %}
+        <div class="card p-4 shadow-sm bg-white">
+            <h3 class="card-title text-info border-bottom pb-2">📊 前回生成されたシフト（データベース同期中）</h3>
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered align-middle text-center small">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>社員</th>
+                            {% for d in dates_list %}
+                            <th>{{ d[5:] }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in saved_slots %}
+                        <tr>
+                            <td class="fw-bold bg-light text-start" style="min-width: 80px;">{{ row.employee }}</td>
+                            {% for task in row.tasks %}
+                            <td style="min-width: 50px; "{% if task == 'M05' %}background-color: #ffcccc;{% elif task == 'RH' or task == 'NG' %}background-color: #e2e3e5;{% endif %}">
+                                {{ task }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </body>
 </html>
