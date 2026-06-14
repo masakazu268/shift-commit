@@ -101,7 +101,7 @@ def calculate_total_penalty(shift_table, employee_capabilities, date_list, holid
                 
         if working_count < required_workers:
             shortage = required_workers - working_count
-            total_penalty += shortage * 1000
+            total_penalty += shortage * 2000
 
     for employee, shifts in shift_table.items():
         consecutive_work = 0
@@ -116,7 +116,7 @@ def calculate_total_penalty(shift_table, employee_capabilities, date_list, holid
             
             if i > 0 and shifts[i-1] == 'M05':
                 if task != '':
-                    total_penalty += 80
+                    total_penalty += 50
 
             if task not in ['', 'RH']:
                 consecutive_work += 1
@@ -185,7 +185,7 @@ def generate_single_candidate(employee_capabilities, date_list, holidays, hope_h
 
     return shift_table
 
-def generate_shift_table(employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, num_candidates=20):
+def generate_shift_table(employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, num_candidates=100):
     date_list = [start_date + timedelta(days=i) for i in range(num_days)]
 
     hope_holidays_dict = {}
