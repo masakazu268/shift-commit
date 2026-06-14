@@ -116,7 +116,7 @@ def calculate_total_penalty(shift_table, employee_capabilities, date_list, holid
             
             if i > 0 and shifts[i-1] == 'M05':
                 if task != '':
-                    total_penalty += 50
+                    total_penalty += 10
 
             if task not in ['', 'RH']:
                 consecutive_work += 1
