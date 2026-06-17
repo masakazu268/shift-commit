@@ -931,7 +931,7 @@ def calculate_total_penalty(special_required_workers, shift_table, employee_capa
             #     if task == 'M01':
             #         total_penalty += 200
             # 夜勤の翌日に、禁止タスク（M01, 771, 772,'773', '774', '775','777'）のいずれかが入っていたらNG
-            if i > 0 and shifts[i-1] == 'M05':
+            if i > 0 and shifts[i-1] in ['M05','M04']:
                 if task in ['M01', 'M02','771', '772', '773', '774', '775','777']:
                     total_penalty += 200
 
@@ -982,8 +982,7 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
 
         for employee in employees:
             # 🌟【生成ロジックの適応】前日が夜勤（M05）の場合、当日の候補から「M01」を絶対に除外する
-            if i > 0 and shift_table[employee][i-1] == 'M05':
-                
+            if i > 0 and shift_table[employee][i-1] in ['M05', 'M04']:
                 # 🚫 除外したいタスクのリスト（不要なものは削ったり、追加したり自由に変えられます）
                 ng_tasks_after_m05 = ['M01', 'M02','771', '772', '773', '774', '775','777']
 
