@@ -983,7 +983,12 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
         for employee in employees:
             # 🌟【生成ロジックの適応】前日が夜勤（M05）の場合、当日の候補から「M01」を絶対に除外する
             if i > 0 and shift_table[employee][i-1] == 'M05':
-                current_possible_tasks = [t for t in possible_tasks if t != 'M01']
+                
+                # 🚫 除外したいタスクのリスト（不要なものは削ったり、追加したり自由に変えられます）
+                ng_tasks_after_m05 = ['M01', 'M02','771', '772', '773', '774', '775','777']
+
+                current_possible_tasks = [t for t in possible_tasks if t not in ng_tasks_after_m05]
+                
             else:
                 current_possible_tasks = possible_tasks
 
