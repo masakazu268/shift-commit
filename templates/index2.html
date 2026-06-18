@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シフト生成自動化システム</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #fafafa; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="text"], input[type="date"], input[type="number"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background-color: #2980b9; }
+        .special-box { background-color: #f7f9fa; border: 1px dashed #3498db; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .badge-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .badge { background-color: #e2f0fb; border: 1px solid #3498db; color: #2980b9; padding: 5px 10px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; }
+        .badge .remove-btn { margin-left: 8px; color: #e74c3c; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 シフト自動生成システム</h1>
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+
+        <form action="/generate" method="POST" onsubmit="syncSpecialWorkers()">
+            <div class="form-group">
+                <label>開始日:</label>
+                <input type="date" name="start_date" required>
+            </div>
+
+            <div class="form-group">
+                <label>生成日数:</label>
+                <input type="number" name="num_days" value="28" required>
+            </div>
+
+            <div class="form-group">
+                <label>祝日・特定公休日 (カンマ区切り):</label>
+                <input type="text" name="holidays" placeholder="2026-07-20, 2026-08-11">
+            </div>
+
+            <div class="special-box">
+                <label>📅 特定日の出勤人数上書き指定 (任意):</label>
+                <small style="color: #666; display: block; margin-bottom: 10px;">イベント日や繁忙期など、曜日ルールを無視して人数を固定したい日付を指定します。</small>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="date" id="sp_date" style="width: 200px;">
+                    <input type="number" id="sp_count" placeholder="必要人数" style="width: 120px;" min="0">
+                    <button type="button" onclick="addSpecialWorkerElement()">追加する</button>
+                </div>
+                
+                <div class="badge-list" id="special_badge_container"></div>
+                
+                <input type="hidden" name="special_workers" id="hidden_special_workers">
+            </div>
+
+            <div class="form-group">
+                <label>希望休 (社員名,日数; で区切る):</label>
+                <textarea name="hope_holidays" rows="2" placeholder="A,5; B,12; C,20"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>社員スキル・能力 (CAPABILITIES):</label>
+                <textarea name="employees" rows="4" required>{{ default_caps }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>各社員の目標公休数 (REQUIREMENTS):</label>
+                <textarea name="holiday_requirements" rows="2" required>{{ default_reqs }}</textarea>
+            </div>
+
+            <button type="submit" style="background-color: #2ecc71; font-size: 16px; width: 100%; padding: 12px;">🚀 シフトを自動生成してExcelをダウンロード</button>
+        </form>
+
+        {% if saved_slots %}
+        <div style="margin-top: 40px; border-top: 2px solid #ccc; padding-top: 20px;">
+            <h2>💾 Neonから読み込んだ最新のシフト表</h2>
+            <table border="1" style="border-collapse: collapse; text-align: center; width: 100%;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="padding: 8px;">社員</th>
+                        {% for d in dates_list %}
+                        <th style="padding: 8px; font-size: 12px;">{{ d[5:] }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in saved_slots %}
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold; background-color: #fafafa;">{{ row.employee }}</td>
+                        {% for task in row.tasks %}
+                        <td style="padding: 8px; "{% if task == 'M05' %}background-color: #ffcccc;{% elif task == 'RH' or task == 'NG' %}background-color: #e0e0e0;{% endif %}">
+                            {{ task }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // 追加された特定日のデータを保持する配列
+        let specialWorkersList = [];
+
+        function addSpecialWorkerElement() {
+            const dateInput = document.getElementById('sp_date');
+            const countInput = document.getElementById('sp_count');
+            
+            const dateVal = dateInput.value;
+            const countVal = countInput.value;
+            
+            if (!dateVal || !countVal) {
+                alert('日付と人数の両方を入力してください。');
+                return;
+            }
+
+            // 既に同じ日付が登録されていたら古い方を削除
+            specialWorkersList = specialWorkersList.filter(item => item.date !== dateVal);
+
+            // リストに追加
+            specialWorkersList.push({ date: dateVal, count: countVal });
+            
+            // 画面のバッジ表示を更新
+            renderBadges();
+
+            // 入力欄をクリア
+            dateInput.value = '';
+            countInput.value = '';
+        }
+
+        function removeSpecialWorkerElement(date) {
+            specialWorkersList = specialWorkersList.filter(item => item.date !== date);
+            renderBadges();
+        }
+
+        function renderBadges() {
+            const container = document.getElementById('special_badge_container');
+            container.innerHTML = '';
+            
+            // 日付順に並び替えて表示
+            specialWorkersList.sort((a, b) => a.date.localeCompare(b.date));
+
+            specialWorkersList.forEach(item => {
+                const badge = document.createElement('div');
+                badge.className = 'badge';
+                badge.innerHTML = `${item.date} ➔ ${item.count}人 <span class="remove-btn" onclick="removeSpecialWorkerElement('${item.date}')">×</span>`;
+                container.appendChild(badge);
+            });
+        }
+
+        // 送信ボタンが押された瞬間に、Pythonが読める文字列「日付,人数;日付,人数」に自動変換して隠し入力欄にセットする
+        function syncSpecialWorkers() {
+            const hiddenInput = document.getElementById('hidden_special_workers');
+            const encodedString = specialWorkersList.map(item => `${item.date},${item.count}`).join(';');
+            hiddenInput.value = encodedString;
+        }
+    </script>
+</body>
+</html>
