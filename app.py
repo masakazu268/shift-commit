@@ -125,7 +125,7 @@ def calculate_total_penalty(special_required_workers, shift_table, employee_capa
             if task not in ['', 'RH']:
                 consecutive_work += 1
                 if consecutive_work >= 6:
-                    total_penalty += 100
+                    total_penalty += 1500
             else:
                 consecutive_work = 0
                 actual_holidays += 1
@@ -325,18 +325,51 @@ def generate():
             if ',' in item:
                 date_part, count_part = item.split(',')
                 special_required_workers[date_part.strip()] = int(count_part.strip())   
+ #------------------------------------------------------------------------------------------------------       
+        # start_date_str = request.form.get('start_date')
+        # start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        # num_days = int(request.form.get('num_days'))
         
-        start_date_str = request.form.get('start_date')
+        # # 🌟【重要】前月最終日の狙い撃ちデータをパース処理の最前列で作成
+        # prev_month_last_day = (start_date - timedelta(days=1)).strftime('%Y-%m-%d')
+        # prev_records = ShiftResult.query.filter_by(date_str=prev_month_last_day).all()
+        # prev_day_shifts = {}
+        # for r in prev_records:
+        #     prev_day_shifts[r.employee_name] = r.task
+#-------------------------------------------------------------------------------------------------------
+# === ここから差し替え ===
+        start_date_str = request.form.get('start_date')  # 例: '2026-09-01'
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
         num_days = int(request.form.get('num_days'))
-        
-        # 🌟【重要】前月最終日の狙い撃ちデータをパース処理の最前列で作成
-        prev_month_last_day = (start_date - timedelta(days=1)).strftime('%Y-%m-%d')
-        prev_records = ShiftResult.query.filter_by(date_str=prev_month_last_day).all()
+
+        # 📅 前月最終日の日付オブジェクトを作成（例: 2026-08-31）
+        last_day_obj = start_date - timedelta(days=1)
+
+        # データベースに保存されている可能性がある『3つの日付パターン』を自動生成
+        possible_date_formats = [
+            last_day_obj.strftime('%Y-%m-%d'),                        # パターン①: '2026-08-31'
+            f"{last_day_obj.month}/{last_day_obj.day}",                # パターン②: '8/31'
+            f"{last_day_obj.year}/{last_day_obj.month}/{last_day_obj.day}" # パターン③: '2026/8/31'
+        ]
+
+        # 🔍 データベースから、上記3パターンのいずれかに合致するレコードを検索
+        prev_records = ShiftResult.query.filter(ShiftResult.date_str.in_(possible_date_formats)).all()
+
+        # ロジック用に辞書型にまとめる
         prev_day_shifts = {}
         for r in prev_records:
             prev_day_shifts[r.employee_name] = r.task
 
+        # 🚨 【デバッグ用】黒い画面（ログ）に読み込み結果をハッキリ出力
+        print("\n" + "="*50)
+        print(f"📡 【システムログ】前月最終日({possible_date_formats[0]})の判定用データを探します...")
+        print(f"🔎 データベースから見つかったデータ: {prev_day_shifts}")
+        print("="*50 + "\n")
+        # === ここまで差し替え ===        
+        
+        
+        
+        
         holidays_raw = request.form.get('holidays', '')
         holidays = [h.strip() for h in holidays_raw.split(',') if h.strip()]
         
