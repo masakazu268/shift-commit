@@ -207,6 +207,34 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
     return shift_table
 
 # 📋 シフトテーブル管理（引数に prev_day_shifts を追加）
+# def generate_shift_table(special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=5000):
+#     date_list = [start_date + timedelta(days=i) for i in range(num_days)]
+
+#     hope_holidays_dict = {}
+#     for employee, day in hope_holidays:
+#         if employee not in hope_holidays_dict:
+#             hope_holidays_dict[employee] = []
+#         hope_holidays_dict[employee].append((start_date + timedelta(days=day - 1)).strftime('%Y-%m-%d'))
+
+#     best_shift_table = None
+#     best_penalty = float('inf')
+
+#     for _ in range(num_candidates):
+#         candidate_table = generate_single_candidate(special_required_workers, employee_capabilities, date_list, holidays, hope_holidays_dict, prev_day_shifts)
+#         penalty = calculate_total_penalty(
+#             special_required_workers, candidate_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+#         )
+#         if penalty < best_penalty:
+#             best_penalty = penalty
+#             best_shift_table = candidate_table
+            
+#         if best_penalty == 0:
+#             break
+
+#     print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
+#     return best_shift_table
+
+# 📋 シフトテーブル管理（引数のバトンを正しく繋ぐ）
 def generate_shift_table(special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=50):
     date_list = [start_date + timedelta(days=i) for i in range(num_days)]
 
@@ -220,10 +248,27 @@ def generate_shift_table(special_required_workers, employee_capabilities, start_
     best_penalty = float('inf')
 
     for _ in range(num_candidates):
-        candidate_table = generate_single_candidate(special_required_workers, employee_capabilities, date_list, holidays, hope_holidays_dict, prev_day_shifts)
-        penalty = calculate_total_penalty(
-            special_required_workers, candidate_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+        # 🚨【ココを修正】必要な5つの引数を正しい順番で1個ずつ確実に渡す！
+        candidate_table = generate_single_candidate(
+            special_required_workers, 
+            employee_capabilities, 
+            date_list, 
+            holidays, 
+            hope_holidays_dict, 
+            prev_day_shifts
         )
+        
+        penalty = calculate_total_penalty(
+            special_required_workers, 
+            candidate_table, 
+            employee_capabilities, 
+            date_list, 
+            holidays, 
+            required_holidays, 
+            hope_holidays_dict, 
+            prev_day_shifts
+        )
+        
         if penalty < best_penalty:
             best_penalty = penalty
             best_shift_table = candidate_table
@@ -398,7 +443,8 @@ def generate():
 
         # シフト生成（新しく整えた prev_day_shifts 引数を追加）
         shift_table = generate_shift_table(
-            special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=50
+            special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=5000
+            
         )
 
         try:
