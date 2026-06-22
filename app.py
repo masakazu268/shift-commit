@@ -451,7 +451,7 @@ def generate():
 
         # シフト生成（新しく整えた prev_day_shifts 引数を追加）
         shift_table = generate_shift_table(
-            special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=5000
+            special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=50
             
         )
 
