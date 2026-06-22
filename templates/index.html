@@ -8,6 +8,33 @@
 <body class="bg-light">
     <div class="container py-5">
         <h1 class="mb-4 text-center">📅 シフト管理 & 社員スキルシステム</h1>
+        <style>
+    .score-perfect { color: #16a34a !important; font-weight: bold; font-size: 1.5rem; }
+    .score-warning { color: #dc2626 !important; font-weight: bold; font-size: 1.5rem; }
+</style>
+
+{% if penalty_score is not none %}
+<div style="background-color: #f0fdf4; border: 2px solid #16a34a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin: 0; color: #166534; display: flex; align-items: center; gap: 10px;">
+        📊 <span>現在のシフト品質評価</span>
+    </h3>
+    <p style="margin: 8px 0 0 0; font-size: 1.1rem; color: #1f2937;">
+        AIが算出したペナルティスコア: 
+        
+        <span class="{% if penalty_score == 0 %}score-perfect{% else %}score-warning{% endif %}">
+            {{ penalty_score }} 点
+        </span>
+
+        {% if penalty_score == 0 %}
+            <span style="font-size: 0.9rem; color: #16a34a; margin-left: 10px;">🎉 完璧なシフトです！制約条件をすべてクリアしました。</span>
+        {% elif penalty_score < 1000 %}
+            <span style="font-size: 0.9rem; color: #d97706; margin-left: 10px;">⚠️ 軽微な調整（希望休の未達成など）がありますが、実用上問題ありません。</span>
+        {% else %}
+            <span style="font-size: 0.9rem; color: #dc2626; margin-left: 10px;">🚨 人員不足、または深刻な連勤ルール違反が含まれています。</span>
+        {% endif %}
+    </p>
+</div>
+{% endif %}
         
         <div class="card p-4 shadow-sm mb-5 bg-white">
             <h3 class="card-title text-primary border-bottom pb-2">👤 社員マスタ管理 (データベース永続化)</h3>

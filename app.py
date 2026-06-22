@@ -8,7 +8,8 @@ import mimetypes
 from flask_sqlalchemy import SQLAlchemy # pyright: ignore[reportMissingImports]
 
 app = Flask(__name__)
-
+# 📊 最新のペナルティスコアを一時保存する変数
+latest_penalty_score = None
 mimetypes.add_type('application/vnd.ms-excel.sheet.macroEnabled.12', '.xlsm')
 
 # ==========================================
@@ -277,6 +278,12 @@ def generate_shift_table(special_required_workers, employee_capabilities, start_
             break
 
     print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
+    
+    print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
+        
+        # 🌟【新設】最新のスコアを保持する
+    global latest_penalty_score
+    latest_penalty_score = best_penalty
     return best_shift_table
 
 
@@ -327,7 +334,8 @@ def index():
         default_caps=generated_caps,     
         default_reqs=generated_reqs,     
         saved_slots=saved_slots,
-        dates_list=dates_list
+        dates_list=dates_list,
+        penalty_score=latest_penalty_score  # 🌟【新設】これを追加！
     )
 
 @app.route('/employee/add', methods=['POST'])
