@@ -70,18 +70,19 @@ with app.app_context():
 def is_weekend_or_holiday(date, holidays):
     return date.weekday() >= 5 or date.strftime('%Y-%m-%d') in holidays
 
-def check_employee_holidays(employee_holidays, required_holidays):
-    for employee, holidays in employee_holidays.items():
-        if holidays < required_holidays.get(employee, 0):
-            return False
-    return True
+# ==========================================
+# 🧠 🚀 アルゴリズム部分（コアロジック）
+# ==========================================
 
-# 🧮 ペナルティスコア計算（引数に prev_day_shifts を追加）
 def calculate_total_penalty(special_required_workers, shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts):
+    """完成したシフト表の不満度（ペナルティ）を計算する関数（低いほど優秀）"""
     total_penalty = 0
+    
+    # 1. 日ごとのチェック（人数不足）
     for i, date in enumerate(date_list):
         date_str = date.strftime('%Y-%m-%d')
         
+        # 必要人数の割り出し（特定日、祝日、土日、平日の順に判定）
         if date_str in special_required_workers:
             required_workers = special_required_workers[date_str]
         elif date_str in holidays:
@@ -91,75 +92,75 @@ def calculate_total_penalty(special_required_workers, shift_table, employee_capa
         else:
             required_workers = 11
             
-        working_count = 0
-        for employee in shift_table:
-            task = shift_table[employee][i]
-            if task not in ['', 'RH', 'NG']:
-                working_count += 1
-                
+        working_count = sum(1 for emp in shift_table if shift_table[emp][i] not in ['', 'RH', 'NG'])
         if working_count < required_workers:
-            shortage = required_workers - working_count
-            total_penalty += shortage * 1000
+            total_penalty += (required_workers - working_count) * 1000
 
+    # 2. 社員ごとのチェック（連勤、希望休違反、総公休数）
     for employee, shifts in shift_table.items():
         consecutive_work = 0
         actual_holidays = 0
         
+        # タイムラインの初日のために前月最終日の情報を引き継ぐ
+        prev_task = prev_day_shifts.get(employee, '')
+        if prev_task not in ['', 'RH', 'NG']:
+            consecutive_work = 1  # 前日出勤なら1連勤からスタート（簡易判定）
+        
         for i, task in enumerate(shifts):
             date_str = date_list[i].strftime('%Y-%m-%d')
             
+            # 希望休なのに出勤させてしまった
             if employee in hope_holidays_dict and date_str in hope_holidays_dict[employee]:
                 if task == 'NG' or (task not in ['', 'RH']):
                     total_penalty += 500
             
-            # 🌟【月またぎ対応】前日の勤務状況を取得（1日目ならDBから狙い撃ちしたデータ、2日目以降なら今月内）
+            # 夜勤（M05）の翌日なのに出勤している（初日は前日データを見る）
             if i == 0:
-                last_task = prev_day_shifts.get(employee, '')
+                if prev_task == 'M05' and task != '':
+                    total_penalty += 80
             else:
-                last_task = shifts[i-1]
+                if shifts[i-1] == 'M05' and task != '':
+                    total_penalty += 80
 
-            # 前日のタスクが M05 または M04 の場合
-            if last_task in ['M05', 'M04']:
-                if task in ['M01', '771', '772']:
-                    total_penalty += 200
-
+            # 連勤カウント
             if task not in ['', 'RH']:
                 consecutive_work += 1
                 if consecutive_work >= 6:
-                    total_penalty += 1500
+                    total_penalty += 100
             else:
                 consecutive_work = 0
                 actual_holidays += 1
                 
+        # 総公休数の不足
         target_holidays = required_holidays.get(employee, 0)
         if actual_holidays < target_holidays:
-            shortage_days = target_holidays - actual_holidays
-            total_penalty += shortage_days * 50
+            total_penalty += (target_holidays - actual_holidays) * 50
 
     return total_penalty
 
-# 🧬 シフト候補生成（引数に prev_day_shifts を追加）
+
 def generate_single_candidate(special_required_workers, employee_capabilities, date_list, holidays, hope_holidays_dict, prev_day_shifts):
+    """ベースとなる初期シフトを1パターン作成する関数"""
     shift_table = {employee: [] for employee in employee_capabilities}
     consecutive_work_days = {employee: 0 for employee in employee_capabilities}
     
+    # 前月データの連勤を引き継ぎ
+    for employee, last_task in prev_day_shifts.items():
+        if employee in consecutive_work_days and last_task not in ['', 'RH', 'NG']:
+            consecutive_work_days[employee] = 1
+
     for i, date in enumerate(date_list):
         date_str = date.strftime('%Y-%m-%d')
-
+        
         if date_str in special_required_workers:
             required_workers = special_required_workers[date_str]
-            if required_workers <= 5:
-                possible_tasks = ['M01', 'M02', 'M03', 'M04', 'M05']
-            elif required_workers == 6:
-                possible_tasks = ['M01', 'HM', 'M02', 'M03', 'M04', 'M05']
-            else:
-                possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M04', 'M05']
+            possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M04', 'M05', 'HM']
         elif date_str in holidays:
             required_workers = 5
-            possible_tasks = ['M01', 'M02', 'M03', 'M04', 'M05']
+            possible_tasks = ['M01','M02', 'M03', 'M04', 'M05']
         elif date.weekday() in [5, 6]:
             required_workers = 6
-            possible_tasks = ['M01', 'HM', 'M02', 'M03', 'M04', 'M05']
+            possible_tasks = ['M01', 'HM' , 'M02', 'M03', 'M04', 'M05']
         else:
             required_workers = 11
             possible_tasks = ['771', '772', '773', '774', '775', '776', '777', 'M01', 'M02', 'M04', 'M05']
@@ -169,24 +170,25 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
         random.shuffle(employees)
 
         for employee in employees:
-            # 🌟【月またぎ対応】前日の勤務状況を取得
+            # 夜勤（M05）の翌日判定
+            is_after_night_shift = False
             if i == 0:
-                last_task = prev_day_shifts.get(employee, '')
+                if prev_day_shifts.get(employee, '') == 'M05':
+                    is_after_night_shift = True
             else:
-                last_task = shift_table[employee][i-1]
+                if shift_table[employee][i-1] == 'M05':
+                    is_after_night_shift = True
 
-            # 前日の勤務が M05 または M04 の場合、当日の候補から特定のタスクを除外
-            if last_task in ['M05', 'M04']:
-                ng_tasks_next_day = ['M01', '771', '772']
-                current_possible_tasks = [t for t in possible_tasks if t not in ng_tasks_next_day]
-            else:
-                current_possible_tasks = possible_tasks
+            if is_after_night_shift:
+                shift_table[employee].append('')
+                consecutive_work_days[employee] = 0
+                continue
 
             if employee in hope_holidays_dict and date_str in hope_holidays_dict[employee]:
                 shift_table[employee].append('RH')
                 consecutive_work_days[employee] = 0
             elif len(day_tasks) < required_workers and consecutive_work_days[employee] < 5:
-                possible_employee_tasks = [task for task in employee_capabilities[employee] if task in current_possible_tasks and task not in day_tasks]
+                possible_employee_tasks = [task for task in employee_capabilities[employee] if task in possible_tasks and task not in day_tasks]
                 if possible_employee_tasks:
                     task = random.choice(possible_employee_tasks)
                     shift_table[employee].append(task)
@@ -201,42 +203,94 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
 
         if len(day_tasks) < required_workers:
             for employee in shift_table.keys():
-                if date_str in hope_holidays_dict.get(employee, []):
-                    if shift_table[employee][-1] == 'RH':
-                        shift_table[employee][-1] = 'NG'
+                if date_str in hope_holidays_dict.get(employee, []) and shift_table[employee][-1] == 'RH':
+                    shift_table[employee][-1] = 'NG'
 
     return shift_table
 
-# 📋 シフトテーブル管理（引数に prev_day_shifts を追加）
-# def generate_shift_table(special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=5000):
-#     date_list = [start_date + timedelta(days=i) for i in range(num_days)]
 
-#     hope_holidays_dict = {}
-#     for employee, day in hope_holidays:
-#         if employee not in hope_holidays_dict:
-#             hope_holidays_dict[employee] = []
-#         hope_holidays_dict[employee].append((start_date + timedelta(days=day - 1)).strftime('%Y-%m-%d'))
-
-#     best_shift_table = None
-#     best_penalty = float('inf')
-
-#     for _ in range(num_candidates):
-#         candidate_table = generate_single_candidate(special_required_workers, employee_capabilities, date_list, holidays, hope_holidays_dict, prev_day_shifts)
-#         penalty = calculate_total_penalty(
-#             special_required_workers, candidate_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
-#         )
-#         if penalty < best_penalty:
-#             best_penalty = penalty
-#             best_shift_table = candidate_table
-            
-#         if best_penalty == 0:
+# def refine_by_local_search(special_required_workers, shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts, steps=1000):
+#     """【局所探索法】ランダムに選んだ2人のタスクを入れ替え、ペナルティが下がれば確定する"""
+#     current_table = {emp: list(shifts) for emp, shifts in shift_table.items()}
+#     current_penalty = calculate_total_penalty(
+#         special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+#     )
+    
+#     employees = list(employee_capabilities.keys())
+#     num_days = len(date_list)
+    
+#     for _ in range(steps):
+#         if current_penalty == 0:
 #             break
+            
+#         target_day = random.randint(0, num_days - 1)
+#         emp1, emp2 = random.sample(employees, 2)
+        
+#         if current_table[emp1][target_day] == current_table[emp2][target_day]:
+#             continue
+            
+#         # スワップ（仮入れ替え）
+#         current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
+        
+#         new_penalty = calculate_total_penalty(
+#             special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+#         )
+        
+#         if new_penalty < current_penalty:
+#             current_penalty = new_penalty
+#         else:
+#             # 巻き戻し
+#             current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
+            
+#     return current_table, current_penalty
+def refine_by_local_search(special_required_workers, shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts, steps=1000):
+    """【局所探索法】ランダムに選んだ2人のタスクを入れ替え、ペナルティが下がれば確定する"""
+    current_table = {emp: list(shifts) for emp, shifts in shift_table.items()}
+    current_penalty = calculate_total_penalty(
+        special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+    )
+    
+    employees = list(employee_capabilities.keys())
+    num_days = len(date_list)
+    
+    for _ in range(steps):
+        if current_penalty == 0:
+            break
+            
+        target_day = random.randint(0, num_days - 1)
+        emp1, emp2 = random.sample(employees, 2)
+        
+        # 同じタスクならスキップ
+        if current_table[emp1][target_day] == current_table[emp2][target_day]:
+            continue
+            
+        # 🚨【ここを追加】入れ替え先のタスクが、お互いのスキルで対応可能かチェック（休みやRH, NGは除外）
+        task1 = current_table[emp1][target_day]
+        task2 = current_table[emp2][target_day]
+        
+        if task2 not in ['', 'RH', 'NG'] and task2 not in employee_capabilities[emp1]:
+            continue
+        if task1 not in ['', 'RH', 'NG'] and task1 not in employee_capabilities[emp2]:
+            continue
+            
+        # スワップ（仮入れ替え）
+        current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
+        
+        new_penalty = calculate_total_penalty(
+            special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
+        )
+        
+        if new_penalty < current_penalty:
+            current_penalty = new_penalty
+        else:
+            # 巻き戻し
+            current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
+            
+    return current_table, current_penalty
 
-#     print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
-#     return best_shift_table
 
-# 📋 シフトテーブル管理（引数のバトンを正しく繋ぐ）
 def generate_shift_table(special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=50):
+    """ベース候補（50回ガチャ）から局所探索法（1000回揉みほぐし）で限界まで最適化するメイン関数"""
     date_list = [start_date + timedelta(days=i) for i in range(num_days)]
 
     hope_holidays_dict = {}
@@ -248,26 +302,14 @@ def generate_shift_table(special_required_workers, employee_capabilities, start_
     best_shift_table = None
     best_penalty = float('inf')
 
+    # 1. 第一段階：50回ガチャを回して、一番マシなベースを1つ選ぶ
     for _ in range(num_candidates):
-        # 🚨【ココを修正】必要な5つの引数を正しい順番で1個ずつ確実に渡す！
         candidate_table = generate_single_candidate(
-            special_required_workers, 
-            employee_capabilities, 
-            date_list, 
-            holidays, 
-            hope_holidays_dict, 
-            prev_day_shifts
+            special_required_workers, employee_capabilities, date_list, holidays, hope_holidays_dict, prev_day_shifts
         )
         
         penalty = calculate_total_penalty(
-            special_required_workers, 
-            candidate_table, 
-            employee_capabilities, 
-            date_list, 
-            holidays, 
-            required_holidays, 
-            hope_holidays_dict, 
-            prev_day_shifts
+            special_required_workers, candidate_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
         )
         
         if penalty < best_penalty:
@@ -277,11 +319,16 @@ def generate_shift_table(special_required_workers, employee_capabilities, start_
         if best_penalty == 0:
             break
 
-    print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
+    print(f"📊 局所探索（入れ替え）前のベストスコア: {best_penalty}点")
     
-    print(f"🎉 採用されたシフトのペナルティスコア: {best_penalty}点")
+    # 2. 第二段階：選ばれたベストシフトを、さらに1000回揉みほぐして最適化
+    if best_penalty > 0:
+        best_shift_table, best_penalty = refine_by_local_search(
+            special_required_workers, best_shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts, steps=1000
+        )
+        print(f"✨ 局所探索（入れ替え）後の最終スコア: {best_penalty}点")
         
-        # 🌟【新設】最新のスコアを保持する
+    # 最新のスコアをグローバル変数に保持する
     global latest_penalty_score
     latest_penalty_score = best_penalty
     return best_shift_table
@@ -335,7 +382,7 @@ def index():
         default_reqs=generated_reqs,     
         saved_slots=saved_slots,
         dates_list=dates_list,
-        penalty_score=latest_penalty_score  # 🌟【新設】これを追加！
+        penalty_score=latest_penalty_score
     )
 
 @app.route('/employee/add', methods=['POST'])
@@ -378,50 +425,28 @@ def generate():
             if ',' in item:
                 date_part, count_part = item.split(',')
                 special_required_workers[date_part.strip()] = int(count_part.strip())   
- #------------------------------------------------------------------------------------------------------       
-        # start_date_str = request.form.get('start_date')
-        # start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-        # num_days = int(request.form.get('num_days'))
-        
-        # # 🌟【重要】前月最終日の狙い撃ちデータをパース処理の最前列で作成
-        # prev_month_last_day = (start_date - timedelta(days=1)).strftime('%Y-%m-%d')
-        # prev_records = ShiftResult.query.filter_by(date_str=prev_month_last_day).all()
-        # prev_day_shifts = {}
-        # for r in prev_records:
-        #     prev_day_shifts[r.employee_name] = r.task
-#-------------------------------------------------------------------------------------------------------
-# === ここから差し替え ===
-        start_date_str = request.form.get('start_date')  # 例: '2026-09-01'
+        start_date_str = request.form.get('start_date')
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
         num_days = int(request.form.get('num_days'))
 
-        # 📅 前月最終日の日付オブジェクトを作成（例: 2026-08-31）
+        # 前月最終日の取得
         last_day_obj = start_date - timedelta(days=1)
-
-        # データベースに保存されている可能性がある『3つの日付パターン』を自動生成
         possible_date_formats = [
-            last_day_obj.strftime('%Y-%m-%d'),                        # パターン①: '2026-08-31'
-            f"{last_day_obj.month}/{last_day_obj.day}",                # パターン②: '8/31'
-            f"{last_day_obj.year}/{last_day_obj.month}/{last_day_obj.day}" # パターン③: '2026/8/31'
+            last_day_obj.strftime('%Y-%m-%d'),
+            f"{last_day_obj.month}/{last_day_obj.day}",
+            f"{last_day_obj.year}/{last_day_obj.month}/{last_day_obj.day}"
         ]
 
-        # 🔍 データベースから、上記3パターンのいずれかに合致するレコードを検索
         prev_records = ShiftResult.query.filter(ShiftResult.date_str.in_(possible_date_formats)).all()
 
-        # ロジック用に辞書型にまとめる
         prev_day_shifts = {}
         for r in prev_records:
             prev_day_shifts[r.employee_name] = r.task
 
-        # 🚨 【デバッグ用】黒い画面（ログ）に読み込み結果をハッキリ出力
         print("\n" + "="*50)
-        print(f"📡 【システムログ】前月最終日({possible_date_formats[0]})の判定用データを探します...")
-        print(f"🔎 データベースから見つかったデータ: {prev_day_shifts}")
+        print(f"📡 【システムログ】前月最終日({possible_date_formats[0]})の判定用データを確認中...")
+        print(f"🔎 読み込まれた前日データ: {prev_day_shifts}")
         print("="*50 + "\n")
-        # === ここまで差し替え ===        
-        
-        
-        
         
         holidays_raw = request.form.get('holidays', '')
         holidays = [h.strip() for h in holidays_raw.split(',') if h.strip()]
@@ -449,10 +474,9 @@ def generate():
                 employee, holiday_count = item.split(',')
                 required_holidays[employee.strip()] = int(holiday_count.strip())
 
-        # シフト生成（新しく整えた prev_day_shifts 引数を追加）
+        # シフト生成（新ロジックへすべてのバトンを正しく渡す）
         shift_table = generate_shift_table(
             special_required_workers, employee_capabilities, start_date, num_days, holidays, required_holidays, hope_holidays, prev_day_shifts, num_candidates=50
-            
         )
 
         try:
