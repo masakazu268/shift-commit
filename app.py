@@ -209,40 +209,6 @@ def generate_single_candidate(special_required_workers, employee_capabilities, d
     return shift_table
 
 
-# def refine_by_local_search(special_required_workers, shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts, steps=1000):
-#     """【局所探索法】ランダムに選んだ2人のタスクを入れ替え、ペナルティが下がれば確定する"""
-#     current_table = {emp: list(shifts) for emp, shifts in shift_table.items()}
-#     current_penalty = calculate_total_penalty(
-#         special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
-#     )
-    
-#     employees = list(employee_capabilities.keys())
-#     num_days = len(date_list)
-    
-#     for _ in range(steps):
-#         if current_penalty == 0:
-#             break
-            
-#         target_day = random.randint(0, num_days - 1)
-#         emp1, emp2 = random.sample(employees, 2)
-        
-#         if current_table[emp1][target_day] == current_table[emp2][target_day]:
-#             continue
-            
-#         # スワップ（仮入れ替え）
-#         current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
-        
-#         new_penalty = calculate_total_penalty(
-#             special_required_workers, current_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts
-#         )
-        
-#         if new_penalty < current_penalty:
-#             current_penalty = new_penalty
-#         else:
-#             # 巻き戻し
-#             current_table[emp1][target_day], current_table[emp2][target_day] = current_table[emp2][target_day], current_table[emp1][target_day]
-            
-#     return current_table, current_penalty
 def refine_by_local_search(special_required_workers, shift_table, employee_capabilities, date_list, holidays, required_holidays, hope_holidays_dict, prev_day_shifts, steps=1000):
     """【局所探索法】ランダムに選んだ2人のタスクを入れ替え、ペナルティが下がれば確定する"""
     current_table = {emp: list(shifts) for emp, shifts in shift_table.items()}
