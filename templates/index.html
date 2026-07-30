@@ -1,97 +1,325 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
-    <title>シフト表生成アプリ & 社員マスタ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCARS SHIFT & CREW MANAGEMENT SYSTEM - USS ENTERPRISE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: SF風のモノスペースフォントを取得 -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* LCARS カラーパレット & ベーススタイル */
+        :root {
+            --lcars-orange: #ff9900;
+            --lcars-amber: #ffcc00;
+            --lcars-peach: #ffaa66;
+            --lcars-blue: #0099cc;
+            --lcars-light-blue: #33ccff;
+            --lcars-purple: #cc6699;
+            --lcars-lavender: #cc99cc;
+            --lcars-red: #cc0033;
+            --lcars-green: #33cc66;
+            --lcars-black: #000000;
+            --lcars-dark-gray: #11141a;
+            --lcars-panel-bg: #1a1d24;
+        }
+
+        body {
+            background-color: var(--lcars-black);
+            color: var(--lcars-amber);
+            font-family: 'Share Tech Mono', monospace, sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        .lcars-header {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* LCARS フレーム & パネルデザイン */
+        .lcars-card {
+            background-color: var(--lcars-panel-bg);
+            border: 2px solid var(--lcars-orange);
+            border-radius: 20px 5px 20px 5px;
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lcars-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 15px;
+            height: 100%;
+            background-color: var(--lcars-orange);
+        }
+
+        /* LCARS 特有のカプセル型ボタン・バッジ */
+        .btn-lcars-orange {
+            background-color: var(--lcars-orange);
+            color: #000;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            border-radius: 20px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-lcars-orange:hover {
+            background-color: #ffb833;
+            color: #000;
+            box-shadow: 0 0 10px var(--lcars-orange);
+        }
+
+        .btn-lcars-blue {
+            background-color: var(--lcars-blue);
+            color: #000;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            border-radius: 20px;
+            border: none;
+        }
+
+        .btn-lcars-blue:hover {
+            background-color: var(--lcars-light-blue);
+            color: #000;
+            box-shadow: 0 0 10px var(--lcars-blue);
+        }
+
+        .btn-lcars-purple {
+            background-color: var(--lcars-purple);
+            color: #000;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            border-radius: 20px;
+            border: none;
+        }
+
+        .btn-lcars-purple:hover {
+            background-color: var(--lcars-lavender);
+            color: #000;
+        }
+
+        .btn-lcars-red {
+            background-color: var(--lcars-red);
+            color: #fff;
+            font-weight: bold;
+            border-radius: 20px;
+            border: none;
+        }
+
+        /* 入力フォームのLCARSカスタマイズ */
+        .form-control {
+            background-color: #000;
+            border: 1px solid var(--lcars-blue);
+            color: var(--lcars-light-blue);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .form-control:focus {
+            background-color: #050b14;
+            border-color: var(--lcars-amber);
+            color: #fff;
+            box-shadow: 0 0 8px var(--lcars-amber);
+        }
+
+        .form-control::placeholder {
+            color: #556677;
+        }
+
+        .form-label {
+            color: var(--lcars-peach);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        /* スコアバナー (LCARS Status Alert) */
+        .lcars-status-box {
+            border-left: 10px solid var(--lcars-green);
+            background-color: #051a0e;
+            border-radius: 0 15px 15px 0;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .lcars-status-box.warning {
+            border-left-color: var(--lcars-red);
+            background-color: #1a0505;
+        }
+
+        .score-perfect {
+            color: var(--lcars-green) !important;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .score-warning {
+            color: var(--lcars-red) !important;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        /* LCARS テーブルスタイル */
+        .table-lcars {
+            color: var(--lcars-amber);
+            border-color: #334455;
+        }
+
+        .table-lcars th {
+            background-color: var(--lcars-purple);
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .table-lcars td {
+            background-color: #0a0d14;
+            vertical-align: middle;
+        }
+
+        /* LCARS ヘッダーバー */
+        .lcars-bar {
+            height: 12px;
+            background-color: var(--lcars-orange);
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .lcars-title-panel {
+            background-color: var(--lcars-amber);
+            color: #000;
+            padding: 5px 20px;
+            border-radius: 20px 0 0 20px;
+            font-weight: 800;
+            display: inline-block;
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container py-5">
-        <h1 class="mb-4 text-center">📅 シフト管理 & 社員スキルシステム</h1>
-        <style>
-    .score-perfect { color: #16a34a !important; font-weight: bold; font-size: 1.5rem; }
-    .score-warning { color: #dc2626 !important; font-weight: bold; font-size: 1.5rem; }
-</style>
 
-{% if penalty_score is not none %}
-<div style="background-color: #f0fdf4; border: 2px solid #16a34a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="margin: 0; color: #166534; display: flex; align-items: center; gap: 10px;">
-        📊 <span>現在のシフト品質評価</span>
-    </h3>
-    <p style="margin: 8px 0 0 0; font-size: 1.1rem; color: #1f2937;">
-        AIが算出したペナルティスコア: 
-        
-        <span class="{% if penalty_score == 0 %}score-perfect{% else %}score-warning{% endif %}">
-            {{ penalty_score }} 点
-        </span>
+<body class="py-4">
+    <div class="container-fluid px-4">
 
-        {% if penalty_score == 0 %}
-            <span style="font-size: 0.9rem; color: #16a34a; margin-left: 10px;">🎉 完璧なシフトです！制約条件をすべてクリアしました。</span>
-        {% elif penalty_score < 1000 %}
-            <span style="font-size: 0.9rem; color: #d97706; margin-left: 10px;">⚠️ 軽微な調整（希望休の未達成など）がありますが、実用上問題ありません。</span>
-        {% else %}
-            <span style="font-size: 0.9rem; color: #dc2626; margin-left: 10px;">🚨 人員不足、または深刻な連勤ルール違反が含まれています。</span>
+        <!-- LCARS メインヘッダー -->
+        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-warning pb-2">
+            <h1 class="m-0 text-warning d-flex align-items-center gap-3">
+                <span class="lcars-title-panel">LCARS 47101</span>
+                <span>ENTERPRISE SHIFT & CREW SYSTEM</span>
+            </h1>
+            <span class="text-secondary small">NCC-1701-D // TACTICAL SCHEDULING</span>
+        </div>
+
+        {% if penalty_score is not none %}
+        <!-- シフト品質評価 (LCARS ステータスディスプレイ) -->
+        <div class="lcars-status-box {% if penalty_score > 0 %}warning{% endif %}">
+            <div class="d-flex align-items-center gap-3">
+                <div class="lcars-header fs-5 text-uppercase" style="color: var(--lcars-peach);">
+                    [ SYSTEM DIAGNOSTIC / QUALITY SCORE ]
+                </div>
+            </div>
+            <p class="m-0 mt-2 fs-5">
+                PENALTY SCORE:
+                <span class="{% if penalty_score == 0 %}score-perfect{% else %}score-warning{% endif %}">
+                    {{ penalty_score }} SYSTEM_UNITS
+                </span>
+
+                {% if penalty_score == 0 %}
+                <span class="ms-3 fs-6" style="color: var(--lcars-green);">🎉 NOMINAL: ALL CONSTRAINTS SATISFIED.
+                    OPTIMAL SHIFT CREATED.</span>
+                {% elif penalty_score < 1000 %} <span class="ms-3 fs-6" style="color: var(--lcars-amber);">⚠️ WARNING:
+                    MINOR DISCREPANCYS DETECTED (REQUESTED OFF-DAYS).</span>
+                    {% else %}
+                    <span class="ms-3 fs-6" style="color: var(--lcars-red);">🚨 ALERT: CRITICAL MANPOWER SHORTAGE OR
+                        RULE VIOLATIONS DETECTED.</span>
+                    {% endif %}
+            </p>
+        </div>
         {% endif %}
-    </p>
-</div>
-{% endif %}
-        
-        <div class="card p-4 shadow-sm mb-5 bg-white">
-            <h3 class="card-title text-primary border-bottom pb-2">👤 社員マスタ管理 (データベース永続化)</h3>
-            <p class="text-muted small">ここに登録されたデータが自動的にシフト生成のベースになります。追加・変更・削除は即座にデータベースへ保存されます。</p>
 
-            <form action="{{ url_for('add_employee') }}" method="POST" class="row g-3 bg-light p-3 rounded mb-4">
-                <h5>➕ 新規社員の追加</h5>
+        <!-- 社員マスタ管理カード -->
+        <div class="lcars-card p-4 mb-5 ms-3">
+            <h3 class="lcars-header text-info border-bottom border-info pb-2 mb-3">
+                🖖 CREW ROSTER DATABASE (PERSISTENT)
+            </h3>
+            <p class="text-secondary small mb-4">PERSONNEL DATA IS AUTOMATICALLY SYNCED WITH TACTICAL SCHEDULE
+                GENERATOR.</p>
+
+            <!-- 新規追加フォーム -->
+            <form action="{{ url_for('add_employee') }}" method="POST" class="row g-3 p-3 rounded mb-4"
+                style="background-color: #0a0e17; border: 1px solid #223344;">
+                <h5 class="text-warning lcars-header fs-6">➕ REGISTER NEW CREW MEMBER</h5>
                 <div class="col-md-3">
-                    <input type="text" name="name" class="form-control" placeholder="社員名 (例: O)" required>
+                    <label class="form-label">NAME / ID</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. DATA / O" required>
                 </div>
                 <div class="col-md-6">
-                    <input type="text" name="skills" class="form-control" placeholder="スキル（カンマ区切り。例: 771,772,M01）" required>
+                    <label class="form-label">SPECIALIZATIONS / SKILLS</label>
+                    <input type="text" name="skills" class="form-control" placeholder="CSV format: 771,772,M01"
+                        required>
                 </div>
                 <div class="col-md-2">
-                    <input type="number" name="required_holidays" class="form-control" value="8" min="0" placeholder="公休日数">
+                    <label class="form-label">REQUIRED OFF</label>
+                    <input type="number" name="required_holidays" class="form-control" value="8" min="0">
                 </div>
-                <div class="col-md-1">
-                    <button type="submit" class="btn btn-primary w-100">追加</button>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-lcars-orange w-100 py-2">ADD</button>
                 </div>
             </form>
 
-            <h5>📋 登録社員一覧</h5>
+            <!-- 社員一覧テーブル -->
+            <h5 class="lcars-header text-warning fs-6 mb-3">📋 ACTIVE PERSONNEL MANIFEST</h5>
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-secondary">
+                <table class="table table-lcars align-middle">
+                    <thead>
                         <tr>
-                            <th style="width: 15%;">社員名</th>
-                            <th style="width: 55%;">所有スキル</th>
-                            <th style="width: 15%;">必要公休日数</th>
-                            <th style="width: 15%;">アクション</th>
+                            <th style="width: 20%;">CREW MEMBER</th>
+                            <th style="width: 45%;">SKILL PROFILE</th>
+                            <th style="width: 15%;">REQUIRED HOLIDAYS</th>
+                            <th style="width: 20%;">COMMAND ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for emp in employees_list %}
                         <tr>
                             <td>
-                                <form id="update-form-{{ emp.id }}" action="{{ url_for('update_employee', id=emp.id) }}" method="POST" class="d-inline">
-                                    <input type="text" name="name" class="form-control form-control-sm" value="{{ emp.name }}" required>
+                                <form id="update-form-{{ emp.id }}" action="{{ url_for('update_employee', id=emp.id) }}"
+                                    method="POST" class="d-inline">
+                                    <input type="text" name="name" class="form-control form-control-sm"
+                                        value="{{ emp.name }}" required>
                             </td>
                             <td>
-                                    <input type="text" name="skills" class="form-control form-control-sm" value="{{ emp.skills }}" required>
+                                <input type="text" name="skills" class="form-control form-control-sm"
+                                    value="{{ emp.skills }}" required>
                             </td>
                             <td>
-                                    <input type="number" name="required_holidays" class="form-control form-control-sm" value="{{ emp.required_holidays }}" min="0">
+                                <input type="number" name="required_holidays" class="form-control form-control-sm"
+                                    value="{{ emp.required_holidays }}" min="0">
                             </td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-success btn-sm">🔄 保存</button>
-                                </form> <form action="{{ url_for('delete_employee', id=emp.id) }}" method="POST" onsubmit="return confirm('本当にこの社員を削除しますか？');" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ 削除</button>
-                                </form>
+                                    <button type="submit" class="btn btn-lcars-blue btn-sm px-3">SAVE</button>
+                                    </form>
+                                    <form action="{{ url_for('delete_employee', id=emp.id) }}" method="POST"
+                                        onsubmit="return confirm('CONFIRM DELETION OF CREW MEMBER?');" class="d-inline">
+                                        <button type="submit" class="btn btn-lcars-red btn-sm px-3">DELETE</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">データがありません。上のフォームから追加してください。</td>
+                            <td colspan="4" class="text-center text-secondary py-3">NO CREW DATA REGISTERED IN DATABASE.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -99,70 +327,89 @@
             </div>
         </div>
 
+        <!-- シフト条件入力と生成 -->
+        <div class="lcars-card p-4 mb-5 ms-3" style="border-color: var(--lcars-blue);">
+            <h3 class="lcars-header text-warning border-bottom border-warning pb-2 mb-3">
+                ⚙️ TACTICAL SHIFT GENERATOR
+            </h3>
 
-        <div class="card p-4 shadow-sm mb-5 bg-white">
-            <h3 class="card-title text-success border-bottom pb-2">⚙️ シフト条件入力と生成</h3>
-            
-            <div class="mb-4 bg-light p-3 rounded">
-                <h5 class="small font-weight-bold">💡 ヒント</h5>
-                <p class="card-text text-muted small mb-0">下の「社員リスト」「社員別休日数」には、上のマスタデータの内容が<b>自動で反映・セットされています</b>。必要に応じて一時的に書き換えることも可能です。</p>
+            <div class="mb-4 p-3 rounded"
+                style="background-color: #08121e; border-left: 4px solid var(--lcars-light-blue);">
+                <p class="m-0 text-info small">
+                    ℹ️ SYSTEM NOTE: Crew database attributes have been loaded automatically into the parameters below.
+                    Modifications here act as temporary overrides for this execution sequence.
+                </p>
             </div>
 
             <form action="/generate" method="POST">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label font-weight-bold">シフト開始日 (YYYY-MM-DD)</label>
+                        <label class="form-label">STARDATE / START DATE (YYYY-MM-DD)</label>
                         <input type="date" name="start_date" class="form-control" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">期間（日数）</label>
+                        <label class="form-label">DURATION (DAYS)</label>
                         <input type="number" name="num_days" class="form-control" value="30" required>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">祝日指定 (YYYY-MM-DD, カンマ区切り)</label>
-                    <input type="text" name="holidays" class="form-control" placeholder="例: 2026-01-01, 2026-01-12">
+                    <label class="form-label">FEDERATION HOLIDAYS (YYYY-MM-DD, CSV)</label>
+                    <input type="text" name="holidays" class="form-control" placeholder="e.g. 2026-01-01, 2026-01-12">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">希望休 (社員名,日付; セミコロン区切り)</label>
-                    <input type="text" name="hope_holidays" class="form-control" placeholder="例: A,5; B,12; A,15">
+                    <label class="form-label">LEAVE REQUESTS (CREW,DAY; SEMICOLON SEPARATED)</label>
+                    <input type="text" name="hope_holidays" class="form-control" placeholder="e.g. A,5; B,12; A,15">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">シフト生成用：社員スキルデータ（自動連動中）</label>
-                    <textarea name="employees" class="form-control text-monospace small" rows="3">{{ default_caps }}</textarea>
-                </div>
-             
-                <div class="mb-3">
-                    <label class="form-label">シフト生成用：休日数データ（自動連動中）</label>
-                    <textarea name="holiday_requirements" class="form-control text-monospace small" rows="2">{{ default_reqs }}</textarea>
+                    <label class="form-label">ACTIVE SKILL MATRIX (AUTO-LINKED)</label>
+                    <textarea name="employees" class="form-control text-monospace small"
+                        rows="3">{{ default_caps }}</textarea>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 py-3 font-weight-bold fs-5">🚀 シフト表を自動生成してExcelをDL</button>
+                <div class="mb-3">
+                    <label class="form-label">OFF-DAY CONSTRAINTS (AUTO-LINKED)</label>
+                    <textarea name="holiday_requirements" class="form-control text-monospace small"
+                        rows="2">{{ default_reqs }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-lcars-orange w-100 py-3 mt-3 fs-5">
+                    🚀 ENGAGE: GENERATE SCHEDULE & EXPORT EXCEL
+                </button>
             </form>
         </div>
 
         {% if saved_slots %}
-        <div class="card p-4 shadow-sm bg-white">
-            <h3 class="card-title text-info border-bottom pb-2">📊 前回生成されたシフト（データベース同期中）</h3>
+        <!-- 生成されたシフト結果表示 -->
+        <div class="lcars-card p-4 ms-3" style="border-color: var(--lcars-purple);">
+            <h3 class="lcars-header text-purple border-bottom border-secondary pb-2 mb-3"
+                style="color: var(--lcars-lavender);">
+                📊 CURRENT GENERATED TACTICAL SCHEDULE
+            </h3>
             <div class="table-responsive mt-3">
-                <table class="table table-bordered align-middle text-center small">
-                    <thead class="table-dark">
+                <table class="table table-bordered table-lcars text-center small align-middle">
+                    <thead>
                         <tr>
-                            <th>社員</th>
+                            <th class="bg-dark text-warning">CREW</th>
                             {% for d in dates_list %}
-                            <th>{{ d[5:] }}</th>
+                            <th style="background-color: var(--lcars-purple); color: #000;">{{ d[5:] }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in saved_slots %}
                         <tr>
-                            <td class="fw-bold bg-light text-start" style="min-width: 80px;">{{ row.employee }}</td>
+                            <td class="fw-bold text-start text-warning"
+                                style="min-width: 90px; background-color: #111822;">
+                                {{ row.employee }}
+                            </td>
                             {% for task in row.tasks %}
-                            <td style="min-width: 50px; "{% if task == 'M05' %}background-color: #ffcccc;{% elif task == 'RH' or task == 'NG' %}background-color: #e2e3e5;{% endif %}">
+                            <td style="min-width: 45px; 
+                                "{% if task == 'M05' %} background-color: #550011; color: #ff99aa;
+                                {% elif task == 'RH' or task == 'NG' %} background-color: #222d3d; color: #778899;
+                                {% else %} background-color: #051424; color: var(--lcars-light-blue); {% endif %}">
                                 {{ task }}
                             </td>
                             {% endfor %}
@@ -176,6 +423,5 @@
 
     </div>
 </body>
+
 </html>
-
-
