@@ -6,12 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LCARS SHIFT & CREW MANAGEMENT SYSTEM - USS ENTERPRISE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts: SF風のモノスペースフォントを取得 -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
 
     <style>
-        /* LCARS カラーパレット & ベーススタイル */
         :root {
             --lcars-orange: #ff9900;
             --lcars-amber: #ffcc00;
@@ -23,8 +21,24 @@
             --lcars-red: #cc0033;
             --lcars-green: #33cc66;
             --lcars-black: #000000;
-            --lcars-dark-gray: #11141a;
             --lcars-panel-bg: #1a1d24;
+            --lcars-frame-color: var(--lcars-orange);
+        }
+
+        /* 項目2: レッドアラートモード時の全般テーマ上書き */
+        body.red-alert-active {
+            --lcars-frame-color: var(--lcars-red);
+            animation: redAlertPulse 1.5s infinite alternate;
+        }
+
+        @keyframes redAlertPulse {
+            0% {
+                box-shadow: inset 0 0 15px rgba(204, 0, 51, 0.2);
+            }
+
+            100% {
+                box-shadow: inset 0 0 50px rgba(204, 0, 51, 0.6);
+            }
         }
 
         body {
@@ -32,6 +46,8 @@
             color: var(--lcars-amber);
             font-family: 'Share Tech Mono', monospace, sans-serif;
             letter-spacing: 0.5px;
+            margin: 0;
+            padding: 0;
         }
 
         h1,
@@ -45,12 +61,96 @@
             letter-spacing: 2px;
         }
 
-        /* LCARS フレーム & パネルデザイン */
+        /* 項目3: LCARS特有のエルボ（L字レイアウト）と左ピルパネル構造 */
+        .lcars-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .lcars-sidebar {
+            width: 160px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 15px 0 15px 15px;
+            background-color: var(--lcars-black);
+        }
+
+        .lcars-elbow {
+            height: 70px;
+            background-color: var(--lcars-frame-color);
+            border-radius: 40px 0 0 0;
+            position: relative;
+        }
+
+        .lcars-elbow-inner {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 120px;
+            height: 35px;
+            background-color: var(--lcars-black);
+            border-radius: 20px 0 0 0;
+        }
+
+        .lcars-pill {
+            background-color: var(--lcars-frame-color);
+            height: 45px;
+            border-radius: 22px 0 0 22px;
+            color: #000;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+
+        .lcars-pill:hover {
+            opacity: 0.85;
+        }
+
+        .lcars-pill.blue {
+            background-color: var(--lcars-blue);
+        }
+
+        .lcars-pill.purple {
+            background-color: var(--lcars-purple);
+        }
+
+        .lcars-pill.peach {
+            background-color: var(--lcars-peach);
+        }
+
+        .lcars-pill.red {
+            background-color: var(--lcars-red);
+            color: #fff;
+        }
+
+        .lcars-sidebar-spacer {
+            flex-grow: 1;
+            background-color: var(--lcars-frame-color);
+            border-radius: 22px 0 0 22px;
+            min-height: 100px;
+        }
+
+        .lcars-main {
+            flex-grow: 1;
+            padding: 15px 25px;
+            overflow-x: hidden;
+        }
+
+        /* LCARS カード */
         .lcars-card {
             background-color: var(--lcars-panel-bg);
-            border: 2px solid var(--lcars-orange);
+            border: 2px solid var(--lcars-frame-color);
             border-radius: 20px 5px 20px 5px;
-            box-shadow: 0 0 15px rgba(255, 153, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.15);
             position: relative;
             overflow: hidden;
         }
@@ -60,12 +160,12 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 15px;
+            width: 12px;
             height: 100%;
-            background-color: var(--lcars-orange);
+            background-color: var(--lcars-frame-color);
         }
 
-        /* LCARS 特有のカプセル型ボタン・バッジ */
+        /* LCARS ボタン */
         .btn-lcars-orange {
             background-color: var(--lcars-orange);
             color: #000;
@@ -78,7 +178,6 @@
 
         .btn-lcars-orange:hover {
             background-color: #ffb833;
-            color: #000;
             box-shadow: 0 0 10px var(--lcars-orange);
         }
 
@@ -91,12 +190,6 @@
             border: none;
         }
 
-        .btn-lcars-blue:hover {
-            background-color: var(--lcars-light-blue);
-            color: #000;
-            box-shadow: 0 0 10px var(--lcars-blue);
-        }
-
         .btn-lcars-purple {
             background-color: var(--lcars-purple);
             color: #000;
@@ -104,11 +197,6 @@
             font-family: 'Orbitron', sans-serif;
             border-radius: 20px;
             border: none;
-        }
-
-        .btn-lcars-purple:hover {
-            background-color: var(--lcars-lavender);
-            color: #000;
         }
 
         .btn-lcars-red {
@@ -119,7 +207,7 @@
             border: none;
         }
 
-        /* 入力フォームのLCARSカスタマイズ */
+        /* 入力フォーム */
         .form-control {
             background-color: #000;
             border: 1px solid var(--lcars-blue);
@@ -144,7 +232,7 @@
             text-transform: uppercase;
         }
 
-        /* スコアバナー (LCARS Status Alert) */
+        /* スコアバナー */
         .lcars-status-box {
             border-left: 10px solid var(--lcars-green);
             background-color: #051a0e;
@@ -156,6 +244,17 @@
         .lcars-status-box.warning {
             border-left-color: var(--lcars-red);
             background-color: #1a0505;
+            animation: alertBlink 1s infinite alternate;
+        }
+
+        @keyframes alertBlink {
+            0% {
+                border-left-color: var(--lcars-red);
+            }
+
+            100% {
+                border-left-color: #ff6688;
+            }
         }
 
         .score-perfect {
@@ -170,7 +269,7 @@
             font-size: 1.8rem;
         }
 
-        /* LCARS テーブルスタイル */
+        /* テーブル */
         .table-lcars {
             color: var(--lcars-amber);
             border-color: #334455;
@@ -188,14 +287,6 @@
             vertical-align: middle;
         }
 
-        /* LCARS ヘッダーバー */
-        .lcars-bar {
-            height: 12px;
-            background-color: var(--lcars-orange);
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
         .lcars-title-panel {
             background-color: var(--lcars-amber);
             color: #000;
@@ -207,221 +298,319 @@
     </style>
 </head>
 
-<body class="py-4">
-    <div class="container-fluid px-4">
+<body class="{% if penalty_score is not none and penalty_score >= 1000 %}red-alert-active{% endif %}">
 
-        <!-- LCARS メインヘッダー -->
-        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-warning pb-2">
-            <h1 class="m-0 text-warning d-flex align-items-center gap-3">
-                <span class="lcars-title-panel">LCARS 47101</span>
-                <span>ENTERPRISE SHIFT & CREW SYSTEM</span>
-            </h1>
-            <span class="text-secondary small">NCC-1701-D // TACTICAL SCHEDULING</span>
-        </div>
-
-        {% if penalty_score is not none %}
-        <!-- シフト品質評価 (LCARS ステータスディスプレイ) -->
-        <div class="lcars-status-box {% if penalty_score > 0 %}warning{% endif %}">
-            <div class="d-flex align-items-center gap-3">
-                <div class="lcars-header fs-5 text-uppercase" style="color: var(--lcars-peach);">
-                    [ SYSTEM DIAGNOSTIC / QUALITY SCORE ]
-                </div>
+    <div class="lcars-layout">
+        <!-- 項目3: 左側LCARSピル形状フレーム＆サイドバー -->
+        <div class="lcars-sidebar">
+            <div class="lcars-elbow">
+                <div class="lcars-elbow-inner"></div>
             </div>
-            <p class="m-0 mt-2 fs-5">
-                PENALTY SCORE:
-                <span class="{% if penalty_score == 0 %}score-perfect{% else %}score-warning{% endif %}">
-                    {{ penalty_score }} SYSTEM_UNITS
-                </span>
-
-                {% if penalty_score == 0 %}
-                <span class="ms-3 fs-6" style="color: var(--lcars-green);">🎉 NOMINAL: ALL CONSTRAINTS SATISFIED.
-                    OPTIMAL SHIFT CREATED.</span>
-                {% elif penalty_score < 1000 %} <span class="ms-3 fs-6" style="color: var(--lcars-amber);">⚠️ WARNING:
-                    MINOR DISCREPANCYS DETECTED (REQUESTED OFF-DAYS).</span>
-                    {% else %}
-                    <span class="ms-3 fs-6" style="color: var(--lcars-red);">🚨 ALERT: CRITICAL MANPOWER SHORTAGE OR
-                        RULE VIOLATIONS DETECTED.</span>
-                    {% endif %}
-            </p>
+            <div class="lcars-pill" onclick="playLcarsSound('beep')">47101</div>
+            <div class="lcars-pill blue" onclick="playLcarsSound('beep')">SYS-01</div>
+            <div class="lcars-pill purple" onclick="playLcarsSound('confirm')">CREW</div>
+            <div class="lcars-pill peach" onclick="playLcarsSound('beep')">TACTICAL</div>
+            {% if penalty_score is not none and penalty_score >= 1000 %}
+            <div class="lcars-pill red" onclick="playLcarsSound('alert')">ALERT</div>
+            {% endif %}
+            <div class="lcars-sidebar-spacer"></div>
         </div>
-        {% endif %}
 
-        <!-- 社員マスタ管理カード -->
-        <div class="lcars-card p-4 mb-5 ms-3">
-            <h3 class="lcars-header text-info border-bottom border-info pb-2 mb-3">
-                🖖 CREW ROSTER DATABASE (PERSISTENT)
-            </h3>
-            <p class="text-secondary small mb-4">PERSONNEL DATA IS AUTOMATICALLY SYNCED WITH TACTICAL SCHEDULE
-                GENERATOR.</p>
+        <!-- メインコンテンツ領域 -->
+        <div class="lcars-main">
 
-            <!-- 新規追加フォーム -->
-            <form action="{{ url_for('add_employee') }}" method="POST" class="row g-3 p-3 rounded mb-4"
-                style="background-color: #0a0e17; border: 1px solid #223344;">
-                <h5 class="text-warning lcars-header fs-6">➕ REGISTER NEW CREW MEMBER</h5>
-                <div class="col-md-3">
-                    <label class="form-label">NAME / ID</label>
-                    <input type="text" name="name" class="form-control" placeholder="e.g. DATA / O" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">SPECIALIZATIONS / SKILLS</label>
-                    <input type="text" name="skills" class="form-control" placeholder="CSV format: 771,772,M01"
-                        required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">REQUIRED OFF</label>
-                    <input type="number" name="required_holidays" class="form-control" value="8" min="0">
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-lcars-orange w-100 py-2">ADD</button>
-                </div>
-            </form>
+            <!-- LCARS メインヘッダー -->
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-warning pb-2">
+                <h1 class="m-0 text-warning d-flex align-items-center gap-3">
+                    <span class="lcars-title-panel">LCARS 47101</span>
+                    <span>ENTERPRISE SHIFT & CREW SYSTEM</span>
+                </h1>
+                <span class="text-secondary small">NCC-1701-D // TACTICAL SCHEDULING</span>
+            </div>
 
-            <!-- 社員一覧テーブル -->
-            <h5 class="lcars-header text-warning fs-6 mb-3">📋 ACTIVE PERSONNEL MANIFEST</h5>
-            <div class="table-responsive">
-                <table class="table table-lcars align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">CREW MEMBER</th>
-                            <th style="width: 45%;">SKILL PROFILE</th>
-                            <th style="width: 15%;">REQUIRED HOLIDAYS</th>
-                            <th style="width: 20%;">COMMAND ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for emp in employees_list %}
-                        <tr>
-                            <td>
-                                <form id="update-form-{{ emp.id }}" action="{{ url_for('update_employee', id=emp.id) }}"
-                                    method="POST" class="d-inline">
-                                    <input type="text" name="name" class="form-control form-control-sm"
-                                        value="{{ emp.name }}" required>
-                            </td>
-                            <td>
-                                <input type="text" name="skills" class="form-control form-control-sm"
-                                    value="{{ emp.skills }}" required>
-                            </td>
-                            <td>
-                                <input type="number" name="required_holidays" class="form-control form-control-sm"
-                                    value="{{ emp.required_holidays }}" min="0">
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-lcars-blue btn-sm px-3">SAVE</button>
-                                    </form>
-                                    <form action="{{ url_for('delete_employee', id=emp.id) }}" method="POST"
-                                        onsubmit="return confirm('CONFIRM DELETION OF CREW MEMBER?');" class="d-inline">
-                                        <button type="submit" class="btn btn-lcars-red btn-sm px-3">DELETE</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+            {% if penalty_score is not none %}
+            <!-- シフト品質評価 (項目2: 1000以上でレッドアラート演出連動) -->
+            <div class="lcars-status-box {% if penalty_score > 0 %}warning{% endif %}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="lcars-header fs-5 text-uppercase" style="color: var(--lcars-peach);">
+                        [ SYSTEM DIAGNOSTIC / QUALITY SCORE ]
+                    </div>
+                </div>
+                <p class="m-0 mt-2 fs-5">
+                    PENALTY SCORE:
+                    <span class="{% if penalty_score == 0 %}score-perfect{% else %}score-warning{% endif %}">
+                        {{ penalty_score }} SYSTEM_UNITS
+                    </span>
+
+                    {% if penalty_score == 0 %}
+                    <span class="ms-3 fs-6" style="color: var(--lcars-green);">🎉 NOMINAL: ALL CONSTRAINTS SATISFIED.
+                        OPTIMAL SHIFT CREATED.</span>
+                    {% elif penalty_score < 1000 %} <span class="ms-3 fs-6" style="color: var(--lcars-amber);">⚠️
+                        WARNING: MINOR DISCREPANCIES DETECTED (REQUESTED OFF-DAYS).</span>
                         {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center text-secondary py-3">NO CREW DATA REGISTERED IN DATABASE.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- シフト条件入力と生成 -->
-        <div class="lcars-card p-4 mb-5 ms-3" style="border-color: var(--lcars-blue);">
-            <h3 class="lcars-header text-warning border-bottom border-warning pb-2 mb-3">
-                ⚙️ TACTICAL SHIFT GENERATOR
-            </h3>
-
-            <div class="mb-4 p-3 rounded"
-                style="background-color: #08121e; border-left: 4px solid var(--lcars-light-blue);">
-                <p class="m-0 text-info small">
-                    ℹ️ SYSTEM NOTE: Crew database attributes have been loaded automatically into the parameters below.
-                    Modifications here act as temporary overrides for this execution sequence.
+                        <span class="ms-3 fs-6" style="color: var(--lcars-red);">🚨 RED ALERT: CRITICAL MANPOWER
+                            SHORTAGE OR RULE VIOLATIONS DETECTED.</span>
+                        {% endif %}
                 </p>
             </div>
+            {% endif %}
 
-            <form action="/generate" method="POST">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">STARDATE / START DATE (YYYY-MM-DD)</label>
-                        <input type="date" name="start_date" class="form-control" required>
+            <!-- 社員マスタ管理カード -->
+            <div class="lcars-card p-4 mb-5 ms-2">
+                <h3 class="lcars-header text-info border-bottom border-info pb-2 mb-3">
+                    🖖 CREW ROSTER DATABASE (PERSISTENT)
+                </h3>
+                <p class="text-secondary small mb-4">PERSONNEL DATA IS AUTOMATICALLY SYNCED WITH TACTICAL SCHEDULE
+                    GENERATOR.</p>
+
+                <!-- 新規追加フォーム -->
+                <form action="{{ url_for('add_employee') }}" method="POST" class="row g-3 p-3 rounded mb-4"
+                    style="background-color: #0a0e17; border: 1px solid #223344;">
+                    <h5 class="text-warning lcars-header fs-6">➕ REGISTER NEW CREW MEMBER</h5>
+                    <div class="col-md-3">
+                        <label class="form-label">NAME / ID</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. DATA / O" required>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">DURATION (DAYS)</label>
-                        <input type="number" name="num_days" class="form-control" value="30" required>
+                    <div class="col-md-6">
+                        <label class="form-label">SPECIALIZATIONS / SKILLS</label>
+                        <input type="text" name="skills" class="form-control" placeholder="CSV format: 771,772,M01"
+                            required>
                     </div>
-                </div>
+                    <div class="col-md-2">
+                        <label class="form-label">REQUIRED OFF</label>
+                        <input type="number" name="required_holidays" class="form-control" value="8" min="0">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-lcars-orange w-100 py-2"
+                            onclick="playLcarsSound('confirm')">ADD</button>
+                    </div>
+                </form>
 
-                <div class="mb-3">
-                    <label class="form-label">FEDERATION HOLIDAYS (YYYY-MM-DD, CSV)</label>
-                    <input type="text" name="holidays" class="form-control" placeholder="e.g. 2026-01-01, 2026-01-12">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">LEAVE REQUESTS (CREW,DAY; SEMICOLON SEPARATED)</label>
-                    <input type="text" name="hope_holidays" class="form-control" placeholder="e.g. A,5; B,12; A,15">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">ACTIVE SKILL MATRIX (AUTO-LINKED)</label>
-                    <textarea name="employees" class="form-control text-monospace small"
-                        rows="3">{{ default_caps }}</textarea>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">OFF-DAY CONSTRAINTS (AUTO-LINKED)</label>
-                    <textarea name="holiday_requirements" class="form-control text-monospace small"
-                        rows="2">{{ default_reqs }}</textarea>
-                </div>
-
-                <button type="submit" class="btn btn-lcars-orange w-100 py-3 mt-3 fs-5">
-                    🚀 ENGAGE: GENERATE SCHEDULE & EXPORT EXCEL
-                </button>
-            </form>
-        </div>
-
-        {% if saved_slots %}
-        <!-- 生成されたシフト結果表示 -->
-        <div class="lcars-card p-4 ms-3" style="border-color: var(--lcars-purple);">
-            <h3 class="lcars-header text-purple border-bottom border-secondary pb-2 mb-3"
-                style="color: var(--lcars-lavender);">
-                📊 CURRENT GENERATED TACTICAL SCHEDULE
-            </h3>
-            <div class="table-responsive mt-3">
-                <table class="table table-bordered table-lcars text-center small align-middle">
-                    <thead>
-                        <tr>
-                            <th class="bg-dark text-warning">CREW</th>
-                            {% for d in dates_list %}
-                            <th style="background-color: var(--lcars-purple); color: #000;">{{ d[5:] }}</th>
+                <!-- 社員一覧テーブル -->
+                <h5 class="lcars-header text-warning fs-6 mb-3">📋 ACTIVE PERSONNEL MANIFEST</h5>
+                <div class="table-responsive">
+                    <table class="table table-lcars align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">CREW MEMBER</th>
+                                <th style="width: 45%;">SKILL PROFILE</th>
+                                <th style="width: 15%;">REQUIRED HOLIDAYS</th>
+                                <th style="width: 20%;">COMMAND ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employees_list %}
+                            <tr>
+                                <td>
+                                    <form id="update-form-{{ emp.id }}"
+                                        action="{{ url_for('update_employee', id=emp.id) }}" method="POST"
+                                        class="d-inline">
+                                        <input type="text" name="name" class="form-control form-control-sm"
+                                            value="{{ emp.name }}" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="skills" class="form-control form-control-sm"
+                                        value="{{ emp.skills }}" required>
+                                </td>
+                                <td>
+                                    <input type="number" name="required_holidays" class="form-control form-control-sm"
+                                        value="{{ emp.required_holidays }}" min="0">
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-lcars-blue btn-sm px-3"
+                                            onclick="playLcarsSound('confirm')">SAVE</button>
+                                        </form>
+                                        <form action="{{ url_for('delete_employee', id=emp.id) }}" method="POST"
+                                            onsubmit="return confirm('CONFIRM DELETION OF CREW MEMBER?');"
+                                            class="d-inline">
+                                            <button type="submit" class="btn btn-lcars-red btn-sm px-3"
+                                                onclick="playLcarsSound('alert')">DELETE</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-secondary py-3">NO CREW DATA REGISTERED IN
+                                    DATABASE.</td>
+                            </tr>
                             {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in saved_slots %}
-                        <tr>
-                            <td class="fw-bold text-start text-warning"
-                                style="min-width: 90px; background-color: #111822;">
-                                {{ row.employee }}
-                            </td>
-                            {% for task in row.tasks %}
-                            <td style="min-width: 45px; 
-                                "{% if task == 'M05' %} background-color: #550011; color: #ff99aa;
-                                {% elif task == 'RH' or task == 'NG' %} background-color: #222d3d; color: #778899;
-                                {% else %} background-color: #051424; color: var(--lcars-light-blue); {% endif %}">
-                                {{ task }}
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-        {% endif %}
 
+            <!-- シフト条件入力と生成 -->
+            <div class="lcars-card p-4 mb-5 ms-2" style="border-color: var(--lcars-blue);">
+                <h3 class="lcars-header text-warning border-bottom border-warning pb-2 mb-3">
+                    ⚙️ TACTICAL SHIFT GENERATOR
+                </h3>
+
+                <div class="mb-4 p-3 rounded"
+                    style="background-color: #08121e; border-left: 4px solid var(--lcars-light-blue);">
+                    <p class="m-0 text-info small">
+                        ℹ️ SYSTEM NOTE: Crew database attributes have been loaded automatically into the parameters
+                        below. Modifications here act as temporary overrides for this execution sequence.
+                    </p>
+                </div>
+
+                <form action="/generate" method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">STARDATE / START DATE (YYYY-MM-DD)</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">DURATION (DAYS)</label>
+                            <input type="number" name="num_days" class="form-control" value="30" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">FEDERATION HOLIDAYS (YYYY-MM-DD, CSV)</label>
+                        <input type="text" name="holidays" class="form-control"
+                            placeholder="e.g. 2026-01-01, 2026-01-12">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">LEAVE REQUESTS (CREW,DAY; SEMICOLON SEPARATED)</label>
+                        <input type="text" name="hope_holidays" class="form-control" placeholder="e.g. A,5; B,12; A,15">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">ACTIVE SKILL MATRIX (AUTO-LINKED)</label>
+                        <textarea name="employees" class="form-control text-monospace small"
+                            rows="3">{{ default_caps }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">OFF-DAY CONSTRAINTS (AUTO-LINKED)</label>
+                        <textarea name="holiday_requirements" class="form-control text-monospace small"
+                            rows="2">{{ default_reqs }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-lcars-orange w-100 py-3 mt-3 fs-5"
+                        onclick="playLcarsSound('engage')">
+                        🚀 ENGAGE: GENERATE SCHEDULE & EXPORT EXCEL
+                    </button>
+                </form>
+            </div>
+
+            {% if saved_slots %}
+            <!-- 生成されたシフト結果表示 -->
+            <div class="lcars-card p-4 ms-2" style="border-color: var(--lcars-purple);">
+                <h3 class="lcars-header text-purple border-bottom border-secondary pb-2 mb-3"
+                    style="color: var(--lcars-lavender);">
+                    📊 CURRENT GENERATED TACTICAL SCHEDULE
+                </h3>
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-lcars text-center small align-middle">
+                        <thead>
+                            <tr>
+                                <th class="bg-dark text-warning">CREW</th>
+                                {% for d in dates_list %}
+                                <th style="background-color: var(--lcars-purple); color: #000;">{{ d[5:] }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in saved_slots %}
+                            <tr>
+                                <td class="fw-bold text-start text-warning"
+                                    style="min-width: 90px; background-color: #111822;">
+                                    {{ row.employee }}
+                                </td>
+                                {% for task in row.tasks %}
+                                <td {% if task == 'M05' %}
+                                    style="min-width: 45px; background-color: #550011; color: #ff99aa;"
+                                    {% elif task == 'RH' or task == 'NG' %}
+                                    style="min-width: 45px; background-color: #222d3d; color: #778899;"
+                                    {% else %}
+                                    style="min-width: 45px; background-color: #051424; color: var(--lcars-light-blue);"
+                                    {% endif %}>
+                                    {{ task }}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
+
+    <!-- 項目1: Web Audio API による LCARS システム音発生ロジック -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playLcarsSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'beep') {
+                // ピピッ（短音コンソール入力音）
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1240, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'confirm') {
+                // ボボボ... (決定音：高周波から低周波への下降スイープ)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(220, now + 0.18);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            } else if (type === 'engage') {
+                // ENGAGEボタン (和音スイープ)
+                [523.25, 659.25, 783.99].forEach((freq) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now);
+                    g.gain.setValueAtTime(0.1, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    o.start(now);
+                    o.stop(now + 0.3);
+                });
+            } else if (type === 'alert') {
+                // 警告音
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        // 全ボタンへ自動クリックサウンドのアタッチ
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('button, .btn, input[type="submit"]').forEach(elem => {
+                if (!elem.getAttribute('onclick')) {
+                    elem.addEventListener('click', () => playLcarsSound('beep'));
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
