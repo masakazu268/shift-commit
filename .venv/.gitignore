@@ -1,0 +1,6 @@
+# 仮想環境やキャッシュなど、除外したいものだけを書く
+.venv/
+env/
+__pycache__/
+instance/
+.DS_Store
