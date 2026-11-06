@@ -480,32 +480,6 @@ def generate():
     
     
 
-
-# 既存のシフトテンプレート用
-@app.route('/download/shift-template')
-def download_shift_template():
-    file_path = os.path.join(app.root_path, 'static', 'shift_template.xlsm')
-    if not os.path.exists(file_path):
-        abort(404)
-    return send_file(
-        file_path,
-        as_attachment=True,
-        download_name='シフト作成テンプレート.xlsm'
-    )
-
-# 【追加】新しいマクロブック用
-@app.route('/download/macro-tool')
-def download_macro_tool():
-    file_path = os.path.join(app.root_path, 'static', 'list_test.xlsm')
-    if not os.path.exists(file_path):
-        abort(404)
-    return send_file(
-        file_path,
-        as_attachment=True,
-        download_name='便利マクロツール.xlsm'
-    )
-    
-
 if __name__ == '__main__':
     app.run(debug=True)
 
